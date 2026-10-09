@@ -1,0 +1,23 @@
+name: Bug report
+description: Report a camera, recognition, gameplay, audio, or installation problem.
+title: "[Bug] "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Include expected behavior, actual behavior, and steps to reproduce.
+    validations:
+      required: true
+  - type: textarea
+    id: setup
+    attributes:
+      label: Setup
+      description: Mac/chip, macOS version, camera, board, lighting, and browser. Omit personal details.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Example or diagnostic details
+      description: For recognition issues, include the intended position and orientation. Check images and logs for personal information before uploading.

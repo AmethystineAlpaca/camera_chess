@@ -1,0 +1,16 @@
+name: Board test or project feedback
+description: Share results from your physical board or suggest an improvement.
+title: "[Feedback] "
+body:
+  - type: textarea
+    id: feedback
+    attributes:
+      label: Your experience or suggestion
+      description: What worked, what was confusing, and what would help?
+    validations:
+      required: true
+  - type: textarea
+    id: conditions
+    attributes:
+      label: Board and camera conditions
+      description: If relevant, include board style, camera angle, lighting, Mac/chip, and a cropped example without personal information.
