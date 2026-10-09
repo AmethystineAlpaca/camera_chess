@@ -1,6 +1,6 @@
 # Camera Chess — 用实体棋盘与 Stockfish 对弈
 
-**V1 · Apple Silicon macOS** · [English](README.md) | 简体中文
+**V1 · Apple Silicon macOS** · [English](README.md) | 简体中文 | [Русский](README.ru.md)
 
 普通国际象棋棋盘、摄像头和一台 Mac，就能与电脑下棋。Camera Chess 使用 **ChessQueries / ChessQ Lite** 在本地识别棋子位置，同步数字棋盘，再由 **Stockfish** 计算并语音播报下一步。无需电子棋盘或棋子传感器。
 

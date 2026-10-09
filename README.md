@@ -1,6 +1,6 @@
 # Camera Chess — Play Stockfish on a real chessboard
 
-**V1 · Apple Silicon macOS** · English | [简体中文](README.zh-CN.md)
+**V1 · Apple Silicon macOS** · English | [简体中文](README.zh-CN.md) | [Русский](README.ru.md)
 
 **A physical chessboard. A camera. A computer opponent that speaks its moves.**
 
