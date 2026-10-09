@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Camera Chess</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}html,body{height:100%;overflow:hidden}body{font:16px system-ui;background:#101b23;color:#edf3f7;margin:0;padding:14px}main{height:100%;max-width:1400px;margin:auto;display:flex;flex-direction:column;gap:12px}header{display:flex;align-items:center;justify-content:space-between;gap:12px;height:44px;flex-shrink:0}h1{margin:0;font-size:20px}h2{font-size:17px}.layout{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,.48fr);gap:16px}.panel{background:#192932;border:1px solid #2d414d;border-radius:16px;padding:12px;min-height:0}.play-panel{display:grid;grid-template-rows:22px minmax(0,1fr) 56px 42px;justify-items:center;gap:8px}.board{position:relative;flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center}#board{height:100%;width:100%;display:flex;justify-content:center;align-items:center}.board svg{display:block;width:100%;height:100%;max-height:100%;max-width:100%}#state{font-size:14px;color:#72dbc0;height:22px;white-space:nowrap}.controls{display:flex;gap:8px;flex-wrap:wrap}select,button{font:inherit;border:1px solid #3e5965;border-radius:10px;padding:8px 12px;background:#223945;color:#edf3f7}button{cursor:pointer}button:disabled{opacity:.4}button.primary{background:#7de1bd;color:#10231c;font-weight:650}button.icon{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:20px}button.icon svg{width:24px;height:24px}#voice[aria-pressed="true"]{background:#285a4b;border-color:#7de1bd;color:#a7f5d6}label{display:block;margin:12px 0}select{max-width:100%}small,.muted{color:#afc0c9;line-height:1.5}#camera-panel{display:flex;flex-direction:column;justify-content:center;height:100%;gap:12px}canvas{width:100%;min-height:0;max-height:75%;object-fit:contain;aspect-ratio:16/9;background:#0d151b;border-radius:9px}#board-notice{height:56px;width:100%;max-width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:8px 16px;border-radius:10px;background:#102b24;border:1px solid #53c9a5;color:#d5ffec;font-size:16px;text-align:center}#board-notice.error{background:#381c20;border-color:#ef6e6e;color:#ffd6d6}#board-notice[hidden]{display:flex!important;visibility:hidden}#board-notice.wait{background:#1b2b38;border-color:#7895ab;color:#e0edf6}[hidden]{display:none!important}#message,#fresh,#sides,#board-label,#control-note,#suggestions,#stats,#auto-side,#setup-note{display:none}dialog{width:min(540px,calc(100vw - 24px));max-height:85dvh;overflow:auto;background:#192932;color:#edf3f7;border:1px solid #3e5965;border-radius:16px;padding:20px}dialog::backdrop{background:#0009}dialog .panel{border:0;padding:0}dialog details{margin:16px 0}summary{cursor:pointer}#expected svg{width:100%;max-height:320px}#moves{line-height:1.8}#errors{font-size:14px;line-height:1.7}#error-details{max-width:100%;flex-shrink:0}#error-details[open]{max-height:120px;overflow:auto}#error-details summary{color:#ffb9b9;font-size:13px}@media(max-width:700px){body{padding:8px}.layout{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) 100px;gap:8px}#camera-panel{padding:4px;align-items:center}canvas{height:100%;width:auto;max-width:100%;max-height:100%}h1{font-size:17px}.panel{padding:8px}}
+
+#board rect.square{cursor:pointer}#board use,#board polygon,#board line{pointer-events:none}
+.home{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px}.home h1{font-size:clamp(32px,7vw,56px)}.home .primary{min-width:180px;padding:14px 24px;font-size:19px}.home .muted{min-height:24px;margin:0;text-align:center}header{height:auto;min-height:44px;flex-wrap:wrap}header h1{font-size:18px}header .controls{justify-content:flex-end}#game-details #error-details{display:block}#game-details #error-details[hidden]{display:none!important}#game-details #error-details[open]{max-height:none}#game-details h2{margin:0}#voice-choice{width:100%}#settings label{margin:20px 0}#settings select{display:block;width:100%;margin-top:8px}#board-notice{font-size:15px;line-height:1.3}#settings{max-width:380px}@media(max-width:700px){header{gap:6px}header .controls{gap:6px}header button{padding:7px 9px}header button.icon{width:38px;height:38px}header h1{font-size:16px}}
+#correction{width:min(940px,calc(100vw - 24px))}.fix-layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(260px,1fr);gap:24px;align-items:start}#fix-board{aspect-ratio:1;width:100%}#fix-board>svg{width:100%;height:100%;display:block}#fix-board rect.square{cursor:pointer}#fix-board use,#fix-board polygon,#fix-board line{pointer-events:none}#fix-board rect.square.selected{stroke:#7de1bd!important;stroke-width:4;paint-order:stroke;filter:brightness(1.15)}.piece-options{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin:8px 0 18px}.piece-option{padding:4px;min-height:48px;background:#9aaeb6}.piece-option svg{display:block;width:100%;height:40px}.piece-option[aria-pressed="true"]{outline:3px solid #7de1bd;outline-offset:2px;background:#cee9df}#empty-piece{width:100%;margin-bottom:16px;background:#223945}.fix-group-label{display:block;margin-top:16px;color:#afc0c9;font-size:14px}#fix-selected{font-size:20px;margin-top:0}#confirm-correction{max-width:420px}@media(max-width:700px){.fix-layout{grid-template-columns:1fr;gap:16px}#fix-board{max-width:380px;margin:auto}#correction{padding:16px}.piece-options{margin-bottom:12px}}
+.home{gap:18px}.home-actions{display:grid;gap:10px;width:min(280px,90vw)}.home-actions button{padding:12px 16px}.home-actions .primary{font-size:18px}input{font:inherit;padding:10px;border:1px solid #3e5965;border-radius:8px;background:#101b23;color:#edf3f7;max-width:100%}#save-name{width:100%}#load-dialog{overflow:hidden}#load-dialog[open]{display:flex;flex-direction:column}.saved-list{display:grid;gap:10px;margin-top:16px;overflow-y:auto;min-height:0;max-height:55dvh;overscroll-behavior:contain}.saved-row{display:flex;gap:8px;align-items:center}.saved-row .saved-item{flex:1;min-width:0;overflow-wrap:anywhere}.delete-save{flex-shrink:0;width:44px;height:44px;padding:0;color:#ffb9b9}#delete-dialog{max-width:420px}#delete-name{overflow-wrap:anywhere}#delete-feedback{color:#ffb9b9}.saved-item{text-align:left;width:100%}.saved-item small{display:block;margin-top:4px}#position-preview{max-width:300px;aspect-ratio:1;margin:12px auto}#position-preview svg{width:100%;height:100%}.play-panel>.controls{flex-wrap:nowrap}.play-panel>.controls button{padding:7px 9px;font-size:14px}#endgame-setup label select{display:block;width:100%;margin-top:6px}#save-dialog{max-width:420px}#save-feedback,#load-feedback,#endgame-feedback{color:#ffb9b9;min-height:20px}.home-note{max-width:400px}#resume-game:disabled{cursor:default}
+</style></head><body><main>
+<section id="home" class="home"><h1>Camera Chess</h1><div class="home-actions"><button id="start-game" class="primary">Start a New Game</button><button id="resume-game" disabled>Resume</button><button id="load-game">Load a Game</button><button id="endgame">Endgame</button></div><button id="home-settings">Settings</button><button id="quit-app">Quit Application</button><p id="home-note" class="muted" role="status"></p></section>
+<header id="game-header" hidden><h1>Camera Chess</h1><div class="controls"><button id="begin">Restart Game</button><button id="exit-game">Back to Home</button><button id="voice" class="icon" aria-label="Voice off — enable"></button><button id="repeat" class="icon" title="Repeat move" aria-label="Repeat move">↻</button><button id="menu" class="icon" title="Settings" aria-label="Settings">⚙</button></div></header>
+<div class="layout" id="game-view" hidden><section class="panel play-panel"><div id="state">Connecting…</div><div class="board"><div id="board"></div></div><div id="board-notice" role="status" aria-live="polite" hidden></div><div class="controls"><button id="save-now">Save</button><button id="confirm-position" hidden>Confirm position</button><button id="fix">Fix recognition</button><button id="info">Details</button><button id="draw" hidden>Claim draw</button></div></section><aside class="panel" id="camera-panel"><canvas id="camera" width="1920" height="1080" aria-label="Live camera"></canvas></aside></div>
+<dialog id="correction"><div style="display:flex;justify-content:space-between;align-items:center"><h2>Fix recognition</h2><button id="cancel-fix" aria-label="Close recognition correction">✕</button></div><p class="muted">Tap any square, then choose what is actually there. Red squares need checking.</p><div class="fix-layout"><div id="fix-board" aria-label="Recognition correction board"></div><section><h3 id="fix-selected">Choose a square</h3><p id="fix-seen" class="muted"></p><span class="fix-group-label">Black pieces</span><div id="black-pieces" class="piece-options" role="group" aria-label="Black pieces"></div><span class="fix-group-label">White pieces</span><div id="white-pieces" class="piece-options" role="group" aria-label="White pieces"></div><button id="empty-piece" class="piece-option" data-piece="." aria-pressed="false">∅ &nbsp; No piece / Empty square</button><p id="fix-choice" role="status"></p><p class="muted">This is a temporary camera correction. It clears when the reading changes.</p><p id="fix-feedback" role="status"></p><button id="apply-fix" class="primary">Fix this square</button></section></div><select id="fix-square" hidden aria-hidden="true"></select><select id="fix-piece" hidden aria-hidden="true"></select></dialog><dialog id="confirm-correction"><h2>Confirm correction?</h2><p id="confirm-fix-description"></p><p class="muted">Use this piece for the current camera reading?</p><div class="controls"><button id="confirm-fix" class="primary">Confirm</button><button id="back-fix">Back</button></div></dialog><dialog id="settings"><div style="display:flex;justify-content:space-between;align-items:center"><h2>Settings</h2><button id="close-settings" aria-label="Close settings">✕</button></div><label>Difficulty<select id="difficulty"><option value="easy">Easy</option><option value="normal" selected>Normal</option><option value="advanced">Advanced</option><option value="hard">Hard</option></select></label><label>Voice<select id="voice-choice" aria-label="Voice"><option value="">Natural voice</option></select></label></dialog>
+<dialog id="game-details"><div style="display:flex;justify-content:space-between;align-items:center"><h2>Board details</h2><button id="close-details" aria-label="Close details">✕</button></div><details id="error-details" hidden open><summary>Check the red squares</summary><div id="errors"></div></details><p id="fix-status" role="status"></p><button id="clear-fixes" hidden>Clear corrections</button><p class="muted">Compare the camera view with your board. Tap a square to correct its recognition.</p></dialog><dialog id="save-dialog"><h2 id="save-title">Save current position?</h2><p class="muted">Saves the last confirmed position.</p><label>Name<input id="save-name" maxlength="80" placeholder="Saved game"></label><p id="save-feedback" role="status"></p><div class="controls"><button id="save-yes" class="primary">Save</button><button id="save-no">Don’t Save</button><button id="save-cancel">Cancel</button></div></dialog>
+<dialog id="load-dialog"><div style="display:flex;justify-content:space-between;align-items:center"><h2>Load a Game</h2><button id="close-load" aria-label="Close saved games">✕</button></div><div id="saved-list" class="saved-list"></div><p id="load-feedback" role="status"></p></dialog>
+<dialog id="delete-dialog" aria-labelledby="delete-title"><h2 id="delete-title">Delete saved game?</h2><p id="delete-name"></p><p class="muted">This saved game will be permanently deleted.</p><p id="delete-feedback" role="status"></p><div class="controls"><button id="confirm-delete">Confirm delete</button><button id="cancel-delete" autofocus>Cancel</button></div></dialog>
+<dialog id="endgame-setup"><h2>Confirm this position</h2><div id="position-preview"></div><label>You play<select id="endgame-player"><option value="white">White</option><option value="black">Black</option></select></label><label>Next to move<select id="endgame-turn"><option value="white">White</option><option value="black">Black</option></select></label><small>No castling or en passant in this mode.</small><p id="endgame-feedback" role="status"></p><div class="controls"><button id="start-position" class="primary">Play this position</button><button id="cancel-position">Back</button></div></dialog>
+</main>
+<dialog id="orientation-confirm" aria-labelledby="flip-title"><h2 id="flip-title">Board flipped</h2><p>Turn the board back to its original direction, or click Restart Game.</p><p class="muted">Play will resume automatically when the board is back.</p><button id="flip-restart" class="primary">Restart Game</button></dialog>
+<dialog id="quit-confirm"><h2>Quit Camera Chess?</h2><p>This closes the camera, sound, desktop chess piece and background service.</p><div class="controls"><button id="quit-confirm-yes">Quit Application</button><button id="quit-cancel">Cancel</button></div></dialog>
+<script>
+const $=s=>document.querySelector(s);
+let lastSpoken='',playing=false,flowBusy=false,errorReminderAt=0,transitionPending=null,libraryBusy=false,positionPlacement=null,libraryPromise=null;
+let busy=false,actionBusy=false,seq=null,cameraBusy=false,session=null,eventId=-1,current=null,voice=false,audio=null,svg=null,rawFen=null;
+const voiceOwner=Date.now()+'-'+Math.random();
+function ownsVoice(){try{return localStorage.getItem('chess-voice-owner')===voiceOwner}catch(e){return true}}
+function cancelSpeech(){if('speechSynthesis' in window)speechSynthesis.cancel()}
+function mutePlayback(){
+  voice=false;muted=true;cancelSpeech();clearTimeout(turnTimer);turnTimer=null;voiceButton();
+  if(audio&&audio.state==='running')audio.suspend().catch(()=>{});
+}
+function note(t){if(playing){if(t)boardNotice(t,'wait')}else $('#home-note').textContent=t}
+const novelty=/Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Wobble|Good News|Jester|Organ|Superstar|Trinoids|Whisper|Zarvox/i;
+function normalVoices(){return speechSynthesis.getVoices().filter(v=>v.lang.startsWith('en')&&!novelty.test(v.name))}
+function refreshVoices(){
+  if(!('speechSynthesis' in window))return;
+  const select=$('#voice-choice'),chosen=select.value;
+  select.replaceChildren(new Option('Natural voice',''),...normalVoices().map(v=>new Option(v.name,v.voiceURI)));
+  select.value=chosen;
+}
+if('speechSynthesis' in window){speechSynthesis.addEventListener('voiceschanged',refreshVoices);refreshVoices()}
+function shortInstruction(g){
+  if(g.orientation_status==='mismatch')return g.orientation_detail;
+
+  if(g.errors.length&&!g.message.startsWith('Move in progress'))return 'Check the red squares.';
+  if(g.strict_recovery)return 'Match the saved board. Ghost = place; × = remove.';
+  if(g.state==='endgame_scan')return g.message.includes('kings')?'Both kings must be visible.':'Clear hands to scan your position.';
+  if(g.state==='endgame_ready')return 'Check the position, then confirm.';
+  if(g.pending){const move=g.message.match(/(?:White|Black) (?:pawn|knight|bishop|rook|queen|king), [a-h][1-8] to [a-h][1-8]\..*/i);return move?move[0]:g.pending.slice(0,2).toUpperCase()+' to '+g.pending.slice(2,4).toUpperCase();}
+  if(g.needs_orientation)return 'Face one side toward the camera.';
+  if(g.message.startsWith('Move in progress'))return 'Finish your move.';
+  return ({player_turn:g.message.includes('Check.')?'Check. Your turn.':'Your turn.',thinking:'Thinking…',paused:'Paused',setup:'Set up the board.',reconcile:'Check the board.',restore:'Restore the marked squares.',finished:g.message.split('. ')[0]})[g.state]||'Waiting…';
+}
+function boardNotice(text,kind='action'){
+  const el=$('#board-notice');el.textContent=text;el.className=kind;el.hidden=!text;
+}
+function speak(t){
+  if(!playing||flowBusy||transitionPending||!voice||!ownsVoice())return;
+  if(!('speechSynthesis' in window)||!('SpeechSynthesisUtterance' in window)){note('Speech is unavailable. Follow the text and arrows.');return}
+  try{
+    cancelSpeech();
+    const u=new SpeechSynthesisUtterance(t.replace(/\b([a-h])([1-8])\b/gi,'$1 $2'));
+    u.rate=1;u.pitch=1;
+    const vs=normalVoices();
+    u.voice=vs.find(v=>v.voiceURI===$('#voice-choice').value)||['Samantha','Google US English','Karen','Daniel','Moira'].map(name=>vs.find(v=>v.name===name)).find(Boolean)||vs[0]||null;
+    u.lang=u.voice?.lang||'en-US';
+    u.onerror=e=>{if(!['canceled','interrupted'].includes(e.error))note('Speech failed. Follow the text and arrows, or try Repeat instruction.')};
+    speechSynthesis.speak(u);
+  }catch(e){note('Speech failed. Follow the text and arrows.')}
+}
+function tone(frequency,start,duration){
+  if(!playing||flowBusy||transitionPending||!voice||!ownsVoice()||!audio||audio.state!=='running')return;
+  const o=audio.createOscillator(),gain=audio.createGain(),t=audio.currentTime+start;
+  o.type='sine';o.frequency.value=frequency;gain.gain.setValueAtTime(.0001,t);gain.gain.exponentialRampToValueAtTime(.18,t+.01);gain.gain.exponentialRampToValueAtTime(.0001,t+duration);o.connect(gain).connect(audio.destination);o.start(t);o.stop(t+duration+.02);
+}
+function ding(){tone(1320,0,.35);tone(1760,.04,.45)}
+function errorBeep(){cancelSpeech();tone(880,0,.12);tone(880,.18,.12);errorReminderAt=Date.now()+3000}
+let muted=false,lastError='',reminderAt=0,turnTimer=null;
+function voiceButton(){
+  const b=$('#voice');
+  b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/>'+(voice?'<path d="M15 8a6 6 0 0 1 0 8M18 5a10 10 0 0 1 0 14"/>':'<path d="m16 9 5 6m0-6-5 6"/>')+'</svg>';
+  b.title=b.ariaLabel=voice?'Voice on — mute':'Voice off — enable';b.setAttribute('aria-pressed',String(voice));
+}
+
+function sayCurrent(){if(playing&&!flowBusy&&!transitionPending&&current?.fresh&&!current.errors.length)speak(shortInstruction(current))}
+function remind(){
+  if(!playing||flowBusy||transitionPending||!voice||!ownsVoice()||!current?.fresh||current.state==='paused'||current.message.startsWith('Move in progress'))return;
+  if(current.errors.length){if(Date.now()>=errorReminderAt)errorBeep();return}
+  if(current.strict_recovery||!current.pending||Date.now()<reminderAt||window.speechSynthesis?.speaking)return;
+  sayCurrent();reminderAt=Date.now()+3000;
+}
+const reminderTimer=setInterval(remind,250);
+function enable(){
+  clearTimeout(turnTimer);turnTimer=null;cancelSpeech();
+  const newlyEnabled=!voice;voice=true;try{localStorage.setItem('chess-voice-owner',voiceOwner)}catch(e){}
+  try{if(!audio){const A=window.AudioContext||window.webkitAudioContext;if(A)audio=new A()}if(audio)audio.resume().then(()=>{if(newlyEnabled&&voice&&ownsVoice())ding()}).catch(()=>note('Sound is blocked. Tap the speaker to retry.'))}catch(e){note('Sound is unavailable. Text and arrows remain active.')}
+  voiceButton();
+}
+voiceButton();
+$('#voice').onclick=()=>{if(voice){mutePlayback();try{localStorage.removeItem('chess-voice-owner')}catch(e){}}else{muted=false;enable();sayCurrent();reminderAt=Date.now()+3000}};
+$('#repeat').onclick=()=>{muted=false;enable();sayCurrent();reminderAt=Date.now()+3000};
+document.addEventListener('pointerdown',e=>{if(playing&&!transitionPending&&!voice&&!muted&&!e.target.closest('#voice')&&!e.target.closest('#exit-game')){enable();sayCurrent();reminderAt=Date.now()+3000}}, {capture:true});
+$('#menu').onclick=$('#home-settings').onclick=()=>$('#settings').showModal();$('#close-settings').onclick=()=>$('#settings').close();
+$('#info').onclick=()=>$('#game-details').showModal();$('#close-details').onclick=()=>$('#game-details').close();
+function frame(n){if(cameraBusy||n===seq||n===undefined)return;cameraBusy=true;let i=new Image();i.onload=()=>{if(!playing){cameraBusy=false;return}const c=$('#camera');c.width=i.naturalWidth;c.height=i.naturalHeight;c.getContext('2d').drawImage(i,0,0);seq=n;cameraBusy=false};i.onerror=()=>cameraBusy=false;i.src='live.jpg?v='+n}
+function show(g){
+  if(!playing)return;
+  if(session===null){$('#difficulty').value=g.difficulty}
+  current=g;
+  const orientationDialog=$('#orientation-confirm');
+  if(g.orientation_status==='mismatch'){if(!orientationDialog.open&&!transitionPending&&!flowBusy)orientationDialog.showModal()}else if(orientationDialog.open)orientationDialog.close();
+  if($('#correction').open)renderFixBoard();
+  if(voice&&!ownsVoice())mutePlayback();
+  $('#state').textContent=g.orientation_status==='mismatch'?'Board flipped':g.camera_phase==='orienting'?'Checking board direction':({player_turn:'Your turn',computer_move:'Computer move',restore:'Checking move',reconcile:'Checking board',setup:'Checking starting position',endgame_scan:'Scanning position',endgame_ready:'Position ready',thinking:'Thinking…'}[g.state]||g.state.replaceAll('_',' '));
+  const cameraNotice=!g.fresh?(['loading','waiting'].includes(g.camera_phase)?'Starting camera…':'Camera unavailable. Wait.'):['uncertain','unreadable'].includes(g.camera_phase)?'Clear hands; check camera view.':g.camera_phase==='settling'?'Board settling. Wait.':g.camera_phase==='orienting'?'Checking board direction.':'';
+  const inProgress=g.message.startsWith('Move in progress');
+  const error=g.errors.length&&!inProgress;
+  let text=shortInstruction(g);
+  $('#error-details').hidden=!error;
+  if(!error)$('#error-details').open=false;
+  if(cameraNotice)text=cameraNotice;
+  if(g.orientation_status==='mismatch')text=g.orientation_detail;
+  if(g.save_error)text+=' '+g.save_error;
+  boardNotice(text,g.orientation_status==='mismatch'?'error':cameraNotice?'wait':error?'error':['thinking','paused'].includes(g.state)?'wait':'action');
+  if(svg!==g.board_svg){$('#board').innerHTML=g.board_svg.replaceAll('#ffbb55','#53c9a5').replaceAll('#15781B','#53c9a5');svg=g.board_svg;for(const square of $('#board').querySelectorAll('rect.square')){const name=[...square.classList].find(c=>/^[a-h][1-8]$/.test(c));square.setAttribute('tabindex','0');square.setAttribute('role','button');square.setAttribute('aria-label','Correct recognition on '+name.toUpperCase())}}
+  const fixes=Object.keys(g.manual_corrections||{});
+  $('#fix-status').textContent=fixes.length?'Manually corrected: '+fixes.map(n=>n.toUpperCase()).join(', '):'';
+  $('#clear-fixes').hidden=!fixes.length;
+  $('#fix').disabled=actionBusy||!g.fresh||!g.raw_placement;
+  $('#errors').replaceChildren(...g.errors.map(t=>{let p=document.createElement('div');const parts=t.match(/^([a-h][1-8]): detected (.*); expected (.*)$/i);p.textContent=parts?parts[1].toUpperCase()+': '+(parts[3]==='empty'?'Clear this square':'Place '+parts[3].toLowerCase()) :t;return p}));
+  $('#save-now').hidden=['setup','endgame_scan','endgame_ready'].includes(g.state);$('#save-now').disabled=!g.can_save||actionBusy;
+  $('#confirm-position').hidden=!['endgame_scan','endgame_ready'].includes(g.state);$('#confirm-position').disabled=g.state!=='endgame_ready'||!g.fresh||!g.side_known||g.camera_phase!=='stable';
+  $('#draw').hidden=!g.can_claim_draw;$('#draw').disabled=actionBusy;$('#begin').disabled=actionBusy||flowBusy;
+  if(session!==g.session){lastSpoken='';const first=session===null;session=g.session;eventId=first?g.event_id:-1;seq=null}
+  const errorKey=error?g.errors.join('|'):'';
+  if(errorKey&&errorKey!==lastError&&g.fresh&&(!lastError||Date.now()>=errorReminderAt)){clearTimeout(turnTimer);errorBeep()}
+  lastError=errorKey;
+  if(g.event_id!==eventId){
+    const recent=g.events.filter(e=>e.id>eventId);eventId=g.event_id;
+    clearTimeout(turnTimer);cancelSpeech();reminderAt=Date.now()+3000;
+    if(g.fresh&&!error){
+      const correct=recent.some(e=>e.kind==='correct');
+      if(correct)ding();
+      const spoken=shortInstruction(g);
+      if(correct||spoken!==lastSpoken){
+        if(correct)turnTimer=setTimeout(()=>{if(playing&&!flowBusy&&!transitionPending&&current?.fresh&&!current.errors.length)speak(shortInstruction(current))},500);
+        else if(g.pending||g.state==='player_turn'||g.state==='finished')speak(spoken);
+        lastSpoken=spoken;
+      }
+    }
+  }
+  if(!g.fresh||error||g.state==='paused'){cancelSpeech();clearTimeout(turnTimer)}
+
+}
+async function request(url,options={},timeout=4000){
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeout);
+  try{return await fetch(url,{...options,signal:controller.signal})}finally{clearTimeout(timer)}
+}
+async function tick(){
+  if(busy||!playing||flowBusy)return;busy=true;
+  try{
+    const responses=await Promise.all([request('/api/game'),request('status.json')]);
+    if(!responses[0].ok)throw Error();show(await responses[0].json());
+    if(responses[1].ok){const s=await responses[1].json();frame(s.sequence)}
+  }catch(e){if(current)current.fresh=false;boardNotice('Camera disconnected. Wait.','wait');cancelSpeech();clearTimeout(turnTimer)}finally{busy=false}
+}
+async function action(path,data){
+  if(actionBusy)return;actionBusy=true;if(current)show(current);
+  try{
+    const r=await request(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...data,session:current?.session,event_id:current?.event_id})});
+    const g=await r.json();if(!r.ok)throw Error(g.error||'Action failed.');
+    note('');show(g);
+  }catch(e){note(e.message||'Local service unavailable. Wait for reconnection.')}
+  finally{actionBusy=false;if(current)show(current)}
+}
+function screen(inGame){
+  playing=inGame;$('#home').hidden=inGame;$('#game-header').hidden=!inGame;$('#game-view').hidden=!inGame;
+  if(!inGame){cancelSpeech();clearTimeout(turnTimer);$('#settings').close();$('#game-details').close();$('#confirm-correction').close();$('#correction').close();$('#save-dialog').close();$('#load-dialog').close();$('#endgame-setup').close();$('#orientation-confirm').close();$('#quit-confirm').close();transitionPending=null;current=null;session=null;eventId=-1;svg=null;seq=null;lastSpoken='';lastError='';$('#camera').getContext('2d').clearRect(0,0,$('#camera').width,$('#camera').height);$('#board').innerHTML=''}
+}
+function refreshLibrary(){
+  if(libraryPromise)return libraryPromise;
+  libraryPromise=(async()=>{
+    try{const r=await request('/api/library');if(!r.ok)throw Error('Could not read saved games.');const data=await r.json();$('#resume-game').disabled=!data.can_resume;return data}
+    catch(e){if(!playing)note(e.message)}
+  })().finally(()=>{libraryPromise=null});
+  return libraryPromise;
+}
+async function enterGame(path,data={}){
+  if(flowBusy)return;flowBusy=true;muted=false;enable();note('Starting camera…');
+  try{
+    const r=await request(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({difficulty:$('#difficulty').value,...data})},12000);
+    const g=await r.json();if(!r.ok)throw Error(g.error||'Could not start game.');
+    $('#load-dialog').close();screen(true);note('');muted=false;enable();show(g);reminderAt=Date.now()+3000;
+  }catch(e){if($('#load-dialog').open)$('#load-feedback').textContent=e.message;else note(e.message||'Could not start game. Try again.')}
+  finally{flowBusy=false;$('#start-game').disabled=false;$('#begin').disabled=false;tick()}
+}
+$('#start-game').onclick=()=>enterGame('/api/start-game');
+$('#resume-game').onclick=()=>enterGame('/api/resume-game');
+$('#endgame').onclick=()=>enterGame('/api/start-endgame');
+let pendingDelete=null,deleteBusy=false;
+function renderSavedGames(games){
+  $('#saved-list').replaceChildren(...games.map(item=>{
+    const row=document.createElement('div');row.className='saved-row';row.setAttribute('role','listitem');
+    const b=document.createElement('button');b.className='saved-item';b.textContent=item.name;
+    const detail=document.createElement('small');detail.textContent=new Date(item.saved_at*1000).toLocaleString('en-SG',{timeZone:'Asia/Singapore',dateStyle:'medium',timeStyle:'short'})+(item.mode==='endgame'?' · Endgame':'');b.appendChild(detail);
+    b.onclick=()=>enterGame('/api/load-game',{id:item.id});
+    const remove=document.createElement('button');remove.className='delete-save';remove.textContent='✕';remove.setAttribute('aria-label','Delete '+item.name);
+    remove.onclick=()=>{pendingDelete=item;$('#delete-name').textContent=item.name;$('#delete-feedback').textContent='';$('#delete-dialog').showModal()};
+    row.append(b,remove);return row;
+  }));if(!games.length)$('#saved-list').textContent='No saved games yet.';
+}
+$('#saved-list').setAttribute('role','list');
+$('#load-game').onclick=async()=>{
+  $('#load-feedback').textContent='';$('#saved-list').textContent='Loading…';$('#load-dialog').showModal();
+  const data=await refreshLibrary();if(!data){$('#saved-list').textContent='';$('#load-feedback').textContent='Could not read saved games. Try again.';return}
+  renderSavedGames(data.games);
+};
+$('#close-load').onclick=()=>$('#load-dialog').close();
+$('#cancel-delete').onclick=()=>{if(!deleteBusy)$('#delete-dialog').close()};
+$('#delete-dialog').addEventListener('cancel',e=>{if(deleteBusy)e.preventDefault()});
+$('#delete-dialog').addEventListener('close',()=>{pendingDelete=null});
+$('#confirm-delete').onclick=async()=>{
+  if(deleteBusy||!pendingDelete)return;deleteBusy=true;
+  $('#confirm-delete').disabled=true;$('#cancel-delete').disabled=true;
+  try{
+    const r=await request('/api/delete-game',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:pendingDelete.id})});
+    const data=await r.json();if(!r.ok)throw Error(data.error||'Could not delete saved game.');
+    renderSavedGames(data.games);$('#delete-dialog').close();$('#close-load').focus();
+  }catch(e){$('#delete-feedback').textContent=e.message||'Could not delete saved game. Try again.'}
+  finally{deleteBusy=false;$('#confirm-delete').disabled=false;$('#cancel-delete').disabled=false}
+};
+async function completeTransition(kind){
+  if(!['exit','new','quit'].includes(kind))return;
+  if(flowBusy)return;flowBusy=true;cancelSpeech();clearTimeout(turnTimer);
+  try{
+    const path=kind==='quit'?'/api/quit-app':kind==='exit'?'/api/exit-game':'/api/new-game';
+    const r=await request(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session:current?.session,difficulty:$('#difficulty').value})},12000);
+    const g=await r.json();if(!r.ok)throw Error(g.error||'Try again.');
+    if(kind==='quit'){applicationClosed();return}
+    if(kind==='exit'){screen(false);shutdownPlayback();window.location.replace('/');return}
+    else{show(g);reminderAt=Date.now()+3000}
+  }catch(e){note(e.message)}finally{flowBusy=false;transitionPending=null;tick()}
+}
+function askToSave(kind){
+  if(flowBusy||transitionPending)return;
+  if(!current?.can_save){completeTransition(kind);return}
+  transitionPending=kind;cancelSpeech();clearTimeout(turnTimer);
+  $('#save-title').textContent=kind==='save'?'Save current position':'Save before '+(kind==='quit'?'quitting the application?':kind==='exit'?'returning home?':'starting a new game?');
+  $('#save-name').value='';$('#save-feedback').textContent='';$('#save-no').hidden=kind==='save';$('#save-dialog').showModal();
+}
+$('#quit-app').onclick=async()=>{
+  if(flowBusy)return;
+  flowBusy=true;
+  try{
+    const r=await request('/api/game');if(!r.ok)throw Error('Could not reach the application.');
+    current=await r.json();flowBusy=false;
+    if(current.can_save){askToSave('quit');return}
+    $('#quit-confirm').showModal();
+  }catch(e){note(e.message)}finally{flowBusy=false}
+};
+$('#quit-cancel').onclick=()=>$('#quit-confirm').close();
+$('#quit-confirm-yes').onclick=()=>{$('#quit-confirm').close();return completeTransition('quit')};
+$('#begin').onclick=()=>askToSave('new');$('#exit-game').onclick=()=>askToSave('exit');$('#save-now').onclick=()=>askToSave('save');
+$('#save-cancel').onclick=()=>{transitionPending=null;$('#save-dialog').close();reminderAt=errorReminderAt=Date.now()+3000};
+$('#save-dialog').addEventListener('cancel',e=>{if(flowBusy){e.preventDefault();return}transitionPending=null;reminderAt=errorReminderAt=Date.now()+3000});
+$('#save-no').onclick=()=>{const kind=transitionPending;$('#save-dialog').close();return completeTransition(kind)};
+$('#save-yes').onclick=async()=>{
+  if(flowBusy)return;flowBusy=true;$('#save-yes').disabled=true;$('#save-no').disabled=true;$('#save-cancel').disabled=true;
+  try{
+    const r=await request('/api/save-game',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session:current?.session,name:$('#save-name').value})});
+    const result=await r.json();if(!r.ok)throw Error(result.error||'Could not save.');
+    const kind=transitionPending;$('#save-dialog').close();flowBusy=false;transitionPending=null;
+    if(kind==='save'){$('#save-now').textContent='Saved ✓';setTimeout(()=>$('#save-now').textContent='Save',2000);}else await completeTransition(kind);
+  }catch(e){$('#save-feedback').textContent=e.message}
+  finally{flowBusy=false;$('#save-yes').disabled=false;$('#save-no').disabled=false;$('#save-cancel').disabled=false}
+};
+$('#confirm-position').onclick=()=>{
+  positionPlacement=current.fen.split(' ')[0];$('#position-preview').innerHTML=current.board_svg;
+  $('#endgame-player').value=current.player;$('#endgame-feedback').textContent='';$('#endgame-setup').showModal();
+};
+$('#cancel-position').onclick=()=>$('#endgame-setup').close();
+$('#start-position').onclick=async()=>{
+  if(actionBusy)return;actionBusy=true;$('#start-position').disabled=true;
+  try{
+    const r=await request('/api/confirm-endgame',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session:current.session,placement:positionPlacement,turn:$('#endgame-turn').value,player:$('#endgame-player').value})});
+    const g=await r.json();if(!r.ok)throw Error(g.error);$('#endgame-setup').close();show(g);
+  }catch(e){$('#endgame-feedback').textContent=e.message;if(current?.state==='endgame_ready'){positionPlacement=current.fen.split(' ')[0];$('#position-preview').innerHTML=current.board_svg}}
+  finally{actionBusy=false;$('#start-position').disabled=false}
+};
+$('#flip-restart').onclick=()=>{ $('#orientation-confirm').close();askToSave('new') };
+$('#orientation-confirm').addEventListener('cancel',e=>e.preventDefault());
+$('#draw').onclick=()=>action('/api/claim-draw');
+
+let fixSeen=null,fixSession=null,fixBoardSvg=null;
+const pieceNames={'.':'Empty',P:'White pawn',N:'White knight',B:'White bishop',R:'White rook',Q:'White queen',K:'White king',p:'Black pawn',n:'Black knight',b:'Black bishop',r:'Black rook',q:'Black queen',k:'Black king'};
+for(const [value,label] of Object.entries(pieceNames))$('#fix-piece').add(new Option(label,value));
+for(let rank=1;rank<=8;rank++)for(const file of 'abcdefgh')$('#fix-square').add(new Option((file+rank).toUpperCase(),file+rank));
+function detectedPiece(name){
+  const rows=current.raw_placement.split('/');let row=[];
+  for(const c of rows[8-Number(name[1])]){if(/[1-8]/.test(c))row.push(...Array(Number(c)).fill('.'));else row.push(c)}
+  return row[name.charCodeAt(0)-97];
+}
+function choosePiece(piece){
+  $('#fix-piece').value=piece;
+  $('#fix-choice').textContent='Actual: '+pieceNames[piece];
+  for(const button of $('#correction').querySelectorAll('[data-piece]'))button.setAttribute('aria-pressed',String(button.dataset.piece===piece));
+}
+function renderFixBoard(){
+  // Use the exact game board, including orientation, arrows and red error marks.
+  // Namespace definitions so this second SVG never points at the other board's pieces.
+  if(fixBoardSvg!==current.board_svg){
+    fixBoardSvg=current.board_svg;
+    $('#fix-board').innerHTML=current.board_svg.replaceAll('#ffbb55','#53c9a5').replaceAll('#15781B','#53c9a5').replace(/id="([^"]+)"/g,'id="fix-$1"').replace(/(href=")#([^"]+)"/g,'$1#fix-$2"');
+  }
+  for(const square of $('#fix-board').querySelectorAll('rect.square')){
+    const name=[...square.classList].find(c=>/^[a-h][1-8]$/.test(c));
+    square.classList.toggle('selected',name===$('#fix-square').value);
+    square.setAttribute('tabindex','0');square.setAttribute('role','button');
+    square.setAttribute('aria-label',name.toUpperCase()+(current.errors.some(e=>e.toLowerCase().startsWith(name+':'))?' — check recognition':'') );
+    square.setAttribute('aria-pressed',String(name===$('#fix-square').value));
+  }
+}
+function buildPieceOptions(){
+  const defs=$('#fix-board').querySelector('defs')?.innerHTML||'';
+  for(const color of ['black','white']){
+    const container=$('#'+color+'-pieces');container.innerHTML='';
+    for(const symbol of (color==='black'?'pnbrqk':'PNBRQK')){
+      const button=document.createElement('button');button.className='piece-option';button.dataset.piece=symbol;
+      button.setAttribute('aria-label',pieceNames[symbol]);button.title=pieceNames[symbol];button.setAttribute('aria-pressed','false');
+      const type=pieceNames[symbol].split(' ')[1];
+      // Each icon has its own definitions to avoid duplicate SVG IDs.
+      const prefix='choice-'+symbol+'-';
+      button.innerHTML='<svg viewBox="0 0 45 45" aria-hidden="true"><defs>'+defs.replaceAll('fix-',prefix)+'</defs><use href="#'+prefix+color+'-'+type+'"/></svg>';
+      button.onclick=()=>choosePiece(symbol);container.appendChild(button);
+    }
+  }
+}
+function selectFix(){
+  if(!current?.fresh||!current.raw_placement)return;
+  fixSeen=detectedPiece($('#fix-square').value);fixSession=current.session;
+  $('#fix-selected').textContent=$('#fix-square').value.toUpperCase();
+  $('#fix-seen').textContent='Camera sees: '+pieceNames[fixSeen];
+  renderFixBoard();choosePiece(current.manual_corrections?.[$('#fix-square').value]?.piece||fixSeen);
+  $('#fix-feedback').textContent='';
+}
+function openFix(name){
+  if(!current?.fresh||!current.raw_placement)return;
+  $('#fix-square').value=name||current.errors.map(e=>e.match(/^([a-h][1-8]):/i)?.[1]?.toLowerCase()).find(Boolean)||'a8';
+  renderFixBoard();buildPieceOptions();selectFix();$('#correction').showModal();
+}
+$('#fix').onclick=()=>openFix();$('#fix-square').onchange=selectFix;
+$('#empty-piece').onclick=()=>choosePiece('.');
+$('#cancel-fix').onclick=()=>$('#correction').close();
+$('#clear-fixes').onclick=()=>action('/api/clear-corrections');
+$('#fix-board').onclick=e=>{const square=e.target.closest('rect.square');if(square){const name=[...square.classList].find(c=>/^[a-h][1-8]$/.test(c));if(name){$('#fix-square').value=name;selectFix()}}};
+$('#fix-board').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.target.dispatchEvent(new MouseEvent('click',{bubbles:true}))}};
+$('#apply-fix').onclick=()=>{
+  if(actionBusy)return;
+  $('#confirm-fix-description').textContent=$('#fix-square').value.toUpperCase()+' → '+pieceNames[$('#fix-piece').value];
+  $('#confirm-correction').showModal();
+};
+$('#back-fix').onclick=()=>$('#confirm-correction').close();
+$('#confirm-fix').onclick=async()=>{
+  if(actionBusy)return;actionBusy=true;$('#confirm-fix').disabled=true;$('#apply-fix').disabled=true;
+  try{const r=await request('/api/correct-square',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session:fixSession,square:$('#fix-square').value,piece:$('#fix-piece').value,seen:fixSeen})});const g=await r.json();if(!r.ok)throw Error(g.error);show(g);$('#confirm-correction').close();$('#correction').close()}
+  catch(e){$('#confirm-correction').close();$('#fix-feedback').textContent=e.message}
+  finally{actionBusy=false;$('#confirm-fix').disabled=false;$('#apply-fix').disabled=false}
+};
+$('#board').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.target.dispatchEvent(new MouseEvent('click',{bubbles:true}))}};
+$('#board').onclick=e=>{const square=e.target.closest('rect.square');if(square){const name=[...square.classList].find(c=>/^[a-h][1-8]$/.test(c));if(name)openFix(name)}};
+
+function shutdownPlayback(){
+  voice=false;muted=true;cancelSpeech();clearTimeout(turnTimer);turnTimer=null;
+  clearInterval(reminderTimer);clearInterval(gameTimer);clearInterval(libraryTimer);clearInterval(pageTimer);
+  const oldAudio=audio;audio=null;
+  if(oldAudio&&oldAudio.state!=='closed')oldAudio.close().catch(()=>{});
+  try{if(ownsVoice())localStorage.removeItem('chess-voice-owner')}catch(e){}
+  voiceButton();
+}
+window.addEventListener('storage',e=>{
+  if(e.key==='chess-voice-owner'&&voice&&!ownsVoice()){
+    mutePlayback();
+  }
+});
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden&&voice){const wasMuted=muted;mutePlayback();muted=wasMuted;try{if(ownsVoice())localStorage.removeItem('chess-voice-owner')}catch(e){}}
+  else if(!document.hidden&&playing&&!voice&&!muted&&!flowBusy&&!transitionPending){enable();sayCurrent();reminderAt=Date.now()+3000}
+});
+window.addEventListener('pagehide',()=>{
+  shutdownPlayback();
+  navigator.sendBeacon('/api/page-leave',new Blob([JSON.stringify({page:voiceOwner})],{type:'application/json'}));
+});
+let pageBusy=false,lastFocus=null,pageConnected=false,pageFailures=0;
+function applicationClosed(){
+  screen(false);shutdownPlayback();
+  for(const id of ['#start-game','#resume-game','#load-game','#endgame','#home-settings','#quit-app'])$(id).disabled=true;
+  note('Camera Chess is closed. Double-click Camera Chess to start again.');
+}
+async function pageHeartbeat(){
+  if(pageBusy)return;pageBusy=true;
+  try{
+    const r=await request('/api/page-heartbeat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({page:voiceOwner})});
+    if(!r.ok)return;
+    const data=await r.json();pageConnected=true;pageFailures=0;if(!data.running){applicationClosed();return}
+    if(lastFocus!==null&&data.focus_id!==lastFocus)window.focus();lastFocus=data.focus_id;
+  }catch(e){if(playing){cancelSpeech();clearTimeout(turnTimer)}if(pageConnected&&++pageFailures>=2)applicationClosed()}finally{pageBusy=false}
+}
+const pageTimer=setInterval(pageHeartbeat,2000);pageHeartbeat();
+const gameTimer=setInterval(tick,200),libraryTimer=setInterval(()=>{if(!playing)refreshLibrary()},3000);refreshLibrary();tick();
+</script></body></html>

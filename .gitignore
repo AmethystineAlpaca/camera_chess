@@ -1,0 +1,21 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.env
+.env.*
+*.pem
+*.key
+research/chessqueries/
+research/edgetam-env/
+research/models/*.safetensors
+research/models/*.download
+vendor/
+Camera Chess.app/Contents/MacOS/
+validation/frames/
+validation/fixtures/
+validation/results/*
+!validation/results/lite-live/
+validation/results/lite-live/*
+!validation/results/lite-live/index.html
+validation/saved-games/
+validation/game-state*.json

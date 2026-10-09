@@ -1,0 +1,16 @@
+{
+  "version": "V1",
+  "platform": "Apple Silicon macOS",
+  "samples": 426,
+  "scope": "Warm-running recognition frames; excludes startup, settling and speech latency",
+  "metrics": {
+    "seconds": {
+      "median_ms": 387,
+      "p95_ms": 449
+    },
+    "capture_to_result": {
+      "median_ms": 487,
+      "p95_ms": 577
+    }
+  }
+}
