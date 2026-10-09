@@ -1,4 +1,5 @@
 .DS_Store
+promotion/
 __pycache__/
 *.py[cod]
 .env
