@@ -134,9 +134,10 @@ def batches(q, data, indices, size, rng=None):
                torch.from_numpy(data["targets"][idx]))
 
 
-def batch_scores(batch, weights):
+def batch_scores(batch, weights, model=None):
     _, q, squares, before, after, flags, mask, _ = batch
-    return torch_scores(q, squares, before, after, flags, weights).masked_fill(~mask[:, None, :], -1e9)
+    scorer = torch_scores if model is None else model.torch_scores
+    return scorer(q, squares, before, after, flags, weights).masked_fill(~mask[:, None, :], -1e9)
 
 
 def summarize(correct, raw, predictions, operations, profiles, phases):
@@ -153,11 +154,11 @@ def summarize(correct, raw, predictions, operations, profiles, phases):
 
 
 @torch.no_grad()
-def evaluate(q, data, indices, weights, size):
+def evaluate(q, data, indices, weights, size, model=None):
     correct, raw, pred_ops, op, profile, phase = [], [], [], [], [], []
     nll, n = 0., 0
     for batch in batches(q, data, indices, size):
-        idx = batch[0]; scores = batch_scores(batch, weights)
+        idx = batch[0]; scores = batch_scores(batch, weights, model)
         targets = batch[-1][:, None].expand(-1, len(PROFILES))
         nll += float(torch.nn.functional.cross_entropy(scores.flatten(0, 1), targets.flatten(), reduction="sum"))
         n += targets.numel()
@@ -173,7 +174,7 @@ def evaluate(q, data, indices, weights, size):
     return result
 
 
-def evaluate_real(path, weights, split="validation"):
+def evaluate_real(path, weights, split="validation", model=None):
     rows = [json.loads(line) for line in (path / "moves.jsonl").read_text().splitlines()]
     correct, raw, pred_ops, errors, times = [], [], [], [], []
     with np.load(path / "moves.npz", allow_pickle=False) as z:
@@ -186,7 +187,8 @@ def evaluate_real(path, weights, split="validation"):
             options = candidates(row["previous_fen"])
             target_index = options.target_index(target)
             started = time.perf_counter()
-            result = predict(row["previous_fen"], q, weights)
+            predictor = predict if model is None else model.predict
+            result = predictor(row["previous_fen"], q, weights)
             times.append(time.perf_counter() - started)
             right = np.array_equal(result["labels"], target)
             correct.append(right); raw.append(np.array_equal(q.argmax(-1), target))

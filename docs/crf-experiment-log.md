@@ -2,23 +2,29 @@
 
 Last updated: 2026-10-11 · Branch: `accuracy-improvement`
 
-**Status:** Integrated on `accuracy-improvement` for the user's local trial. Stable recognized positions now advance automatically; **Fix recognition** is the only recognition-review action. Corrections reconcile the current board with recent pre-move references, including undoing a false move and its engine reply. The earlier public-photo screening failure remains recorded in E06; the user subsequently authorized integration in E07. No branch merge or deployment-accuracy claim.
+**Evaluation status: real continuous-video performance has not been measured.** There is currently no measured end-to-end accuracy for the original application, the 25-weight CRF, or the 250-weight CRF on the same labeled camera recordings. No deployment accuracy improvement or parameter-count winner is established here.
 
-The design section below describes the current implementation. Dated entries preserve earlier decisions and measured results, including the initial stop after validation. Dataset provenance, formats, coverage counts, and reproduction commands live in the [dataset build record](crf-data.md). Bulk data and run artifacts under `data/crf/` are local and Git-ignored.
+**Latest offline evidence — E12:** Compared the frozen recognizer, fixed candidate scoring, and the saved 25-/250-weight CRFs on 176 real photos from Felix Fabricius's Robot chess commentator dataset, with synthetic previous states constructed from the labeled current board. One-, five-, and ten-state results measure conditional single-step recognition, not recognition of the previous frame, recovery from an incorrect reference, or application performance on video.
 
-## Ongoing experiment — CRF postprocessing v1
+**Historical evaluation:** The [annotated archive — evaluation scope issues](crf-experiment-log-2026-10-11-evaluation-issues.md) preserves the complete pre-cleanup log. E11 removed its synthetic/static-photo scores, epoch metric tables, and screening conclusions from this active record. Those offline diagnostics did not establish a CRF-disabled application baseline or continuous tracking accuracy. E12 records a separately specified photo protocol; its scores must not be compared directly with the archived scores as a before/after improvement.
 
-**Current stage, as of 2026-10-11:** Training and integration are complete. Initial physical-board feedback is encouraging, with a reported disabled Confirm button after a computer pawn promotes to a knight. E07 records implementation and automated verification; E09 records the initial manual feedback and remaining work. No new training or dataset generation was performed during integration.
+**Implementation status:** The application continues to use the existing 25-weight v1 checkpoint. The separately trained 250-weight v2 checkpoint is retained as an experimental artifact. E12 changes no checkpoint or live application behavior; it adds a reproducible offline photo evaluation and its result record.
+
+The design and implementation history below remain available. Dataset provenance and preparation details are in the [dataset build record](crf-data.md). Bulk data and run artifacts under `data/crf/` are local and Git-ignored.
+
+## Current experiment status
 
 ### Where the current data came from
 
 | Data stream | Source | Current artifact and intended use |
 | --- | --- | --- |
 | Main synthetic dataset | Official Lichess standard-game PGNs: [January 2013](https://database.lichess.org/standard/lichess_db_standard_rated_2013-01.pgn.zst) and [February 2013](https://database.lichess.org/standard/lichess_db_standard_rated_2013-02.pgn.zst), CC0; first 6,000 games from each archive | `data/crf/synthetic-v1/`: 20,000 unique transitions, expanded into 200,000 observations for training/validation/testing |
-| Auxiliary real photographs | [Felix Fabricius's Robot chess commentator dataset](https://huggingface.co/datasets/felixfabricius/robot-chess-commentator-squares), CC-BY-4.0; pinned revision `d71ba52761e497b18bbe5743efcbafb0d1f21091` | `data/crf/real/robot-v1/`: 371 source photos, yielding 176 retained legal transition examples with measured frozen-model probabilities |
+| Auxiliary real photographs | [Felix Fabricius's Robot chess commentator dataset](https://huggingface.co/datasets/felixfabricius/robot-chess-commentator-squares), CC-BY-4.0; pinned revision `d71ba52761e497b18bbe5743efcbafb0d1f21091` | `data/crf/real/robot-v1/`: 371 source photos, yielding 176 current-photo/annotated-previous-state examples with measured frozen-model probabilities |
 | Local partial labels | This application's existing human correction archives, paired with the original image and model output | `data/crf/real/local-corrections/`: 26 frames with 27 explicitly labeled squares, for calibration only |
 
 The **200,000 main observations are generated probability arrays, not generated images or measured model outputs**. Their board labels come from replayed PGNs and explicitly marked derived transitions. The public photographs and local corrections are separate auxiliary datasets and are not mixed into that count. Source checksums and acquisition metadata are recorded in the PGN source manifest (`data/crf/raw/sources.json`, local only) and photo source manifest (`data/crf/real/robot-v1/source.json`, local only).
+
+The synthetic split contains **16,000 / 2,000 / 2,000 base transitions** for train / validation / test, each expanded into ten correlated probability profiles. The 160,000 training observations are not 160,000 independent photographed moves. The Felix dataset's `train` / `validation` / `test` names are its source-photo split labels; neither CRF was fitted on those photos.
 
 ### Operations completed
 
@@ -33,47 +39,47 @@ The **200,000 main observations are generated probability arrays, not generated 
 
 | Work item | Status | Evidence / remaining work |
 | --- | --- | --- |
-| Source acquisition, builders, and smoke run | Complete | Seven focused tests passed; 1,000-transition / 10,000-observation smoke build validated |
-| Full synthetic dataset | Generated; structural validation passed | 200,000 samples / 12.8 million probability rows checked; zero duplicate inputs/transitions or cross-split games/placements in the validation report (`data/crf/synthetic-v1/validation.json`, local only) |
-| Auxiliary real data and probability cache | Prepared; structural validation passed | 176 public examples and 27 local square labels; zero audited split/endpoint overlaps in the real-data report (`data/crf/real/validation.json`, local only) |
-| Candidate generation and fixed-weight baseline | Implemented and evaluated | 100% target coverage over 18,000 train/validation transitions; 94.60% synthetic validation exact-board accuracy with fixed weights |
-| CRF fitting and comparison | Complete; integration gate failed | 25 weights, 12 CPU epochs; 98.28% synthetic validation and 64.18% public-photo validation exact-board accuracy |
-| Application integration | Implemented for user-authorized trial | Stable automatic acceptance with one state-correction editor; current/previous-state reconciliation; see E07 |
-| Branch merge | Not performed | Awaiting the user’s camera test |
-| In-domain video calibration and final evaluation | Outstanding | 0 verified continuous-video events; target several hundred to 1,000 independent events |
+| Source acquisition and data preparation | Complete | E01–E04; original datasets and split assignments retained |
+| v1 training | Complete | 25-weight checkpoint and run artifacts retained; E06 |
+| v2 training | Complete | Separate 250-weight checkpoint and run artifacts retained; E10 |
+| Public still photos with sampled synthetic previous states | Evaluated offline | 176 photos; one-state and all-correct results with 5/10 different predecessors for raw argmax, fixed scoring, v1 and v2; E12 |
+| Felix dataset test split | Now evaluated / exposed | 55 photos from 10 setups included in E12; no longer an untouched test set for future tuning |
+| Synthetic test split | Remains unscored in the recorded experiments | 20,000 observations; E12 evaluates Felix dataset photos |
+| Application integration | Existing v1 local trial | E07 implementation; E09 qualitative feedback and unresolved promotion issue |
+| Original pipeline on labeled continuous video | Not measured | Baseline accuracy, wrong commits, missed moves, and latency remain pending |
+| v1/v2 on the same labeled continuous video | Not measured | Comparison must preserve each pipeline's predicted-state feedback and temporal logic |
+| Earlier evaluation protocol | Archived with scope warning | Historical scores remain in the archive; E12 results have their own explicit protocol |
 
-**Interpretation:** Learning improves over fixed scoring, but the improvement does not yet deliver reliable real-image recognition. Synthetic training and validation are both about 98.28%, while public-photo validation is 64.18%. This is consistent with a synthetic-to-real mismatch; the experiment has not isolated the contributions of visual input, noise simulation, or feature design. E04 records the original frozen-recognizer baseline; E06 records the trained postprocessor's validation results.
+## Design — current v1 application and separate v2 experiment
 
-## Design — current revision
-
-The original proposal introduced a frozen recognizer plus a small CRF postprocessor. E07 replaced mandatory per-observation confirmation with automatic play and optional state correction. The equations, flow and terminology below now reflect that revision; the earlier confirmation policy is retained only as a historical decision in the experiment entries.
+The original proposal introduced a frozen recognizer plus a small CRF postprocessor. E07 replaced mandatory per-observation confirmation with automatic play and optional state correction. The equations, flow and terminology below now reflect that revision; the earlier confirmation policy and original evaluation decisions are preserved in the annotated archive.
 
 ### Objective and hypothesis
 
 Improve board recognition accuracy and response time without changing ChessQ Lite V4's weights. A piece-type error in one image should not override the accepted previous board when the implied transition is implausible. A real illegal move should remain detectable rather than being forced into a legal move. The user corrects the recognized state through **Fix recognition**, without labeling the cause of an error.
 
-The working hypothesis is that a small temporal postprocessor can correct some visual errors using piece identity, movement, and unchanged-square evidence. Whether it does so reliably on this camera and chess set remains to be tested.
+The working hypothesis is that a small postprocessor conditioned on a previous board can correct some visual errors using piece identity, movement, and unchanged-square evidence. The learned scorer processes one observation at a time; the application controller supplies temporal stability checks. Reliability on this camera and chess set remains to be measured.
 
 ### Model and state
 
-Use a **single-step conditional log-linear model**, described here as a CRF postprocessor with its previous state fixed. Candidate scoring is how this model performs inference; it is not an additional neural model after the CRF. The implemented model has 25 shared weights trained independently from the frozen recognizer.
+Use a **single-step conditional log-linear model**, described here as a CRF postprocessor with its previous state fixed. Candidate scoring is how this model performs inference; it is not an additional neural model after the CRF. The application uses v1's 25 stored learned coefficients. E10 retains a separate v2 with 250 learned residual coefficients; it has not replaced v1 in the application. Both share weights across squares and keep the recognizer frozen.
 
 | Symbol | Meaning |
 | --- | --- |
 | `G` | Current accepted legal reference: 64 piece labels plus side to move, castling rights, and effective en passant information; retain game history separately |
-| `Q` | Current image's `64 × 13` class probabilities from the frozen recognizer |
+| `Q` | `64 × 13` class probabilities: measured frozen-recognizer outputs in live/photo inference; generated arrays during synthetic training |
 | `B` | Candidate current physical board, represented by 64 labels |
 | `B*` | Ground-truth target during training, or the edited physical board when the user applies a correction |
 | `C(G)` | Candidate boards reachable from `G` by supported operations |
 | `m` | Pending computer move, if an instruction has been issued |
 
-During live play, `G` can be provisionally accepted by the application rather than explicitly checked by the user. Not opening Fix recognition permits play to continue; it does not certify the board as human-labeled ground truth. In training v1, the previous state is correct by construction, so those validation scores do not measure recovery from an already mistaken live reference.
+During live play, `G` can be provisionally accepted by the application rather than explicitly checked by the user. Not opening Fix recognition permits play to continue; it does not certify the board as human-labeled ground truth. Both CRFs were trained with a supplied, correct previous state. E12 constructs that state from the labeled target. Neither setting measures recovery from an already mistaken live reference.
 
 Class order is `. P N B R Q K p n b r q k`; square order is a8 through h8, then a7 through h7, down to a1 through h1. The 64-label vector alone is insufficient to determine all legal transitions.
 
-### Transition and scoring equations
+### Transition and scoring equations — v1
 
-For this first experiment, one observation interval contains either no completed move, one completed legal move, or one supported physical mistake. Let `A(G)` contain those operations:
+The supported model assumes an observation interval contains either no completed move, one completed legal move, or one supported physical mistake. Let `A(G)` contain those operations:
 
 $$
 \mathcal A(G)=\{\mathrm{unchanged}\}\cup\mathcal A_{\mathrm{legal}}(G)\cup\mathcal A_{\mathrm{mistake}}(G),
@@ -94,7 +100,7 @@ P_\theta(B\mid G,Q)=
 \hat B=\underset{B\in\mathcal C(G)}{\arg\max}\;s_\theta(G,Q,B).
 $$
 
-Implemented features combine per-class visual fit, empty/white/black evidence, probability fit, argmax agreement, and operation flags. One visual-fit feature is:
+The 25 v1 coefficients cover 13 class log-probability features, three empty/white/black log-probability features, one probability-fit feature, one argmax-agreement feature, and seven operation flags. One visual-fit feature is:
 
 $$
 f_{\mathrm{visual}}(Q,B)=\sum_{i=1}^{64}\log\bigl(\max(Q_{i,B_i},\epsilon)\bigr).
@@ -108,7 +114,7 @@ $$
 \mathcal L(\theta)=-\frac1N\sum_{n=1}^{N}\log P_\theta(B_n^*\mid G_n,Q_n)+\lambda\lVert\theta\rVert_2^2.
 $$
 
-Every training target must be present in its candidate set; this was audited before fitting. A high relative probability does not establish that any candidate is correct. The live adapter therefore also checks absolute visual fit, occupancy evidence and temporal stability. E07 records the current heuristic thresholds; real-video calibration remains outstanding. Legal / unchanged / illegal-operation labels and uncertainty are internal model or controller information, not review categories for the user.
+Every training target must be present in its candidate set; this was audited before fitting. A high relative probability does not establish that any candidate is correct. The live adapter therefore also checks absolute visual fit, occupancy evidence and temporal stability. E07 records the current heuristic thresholds; real-video calibration remains outstanding. E12 evaluates the scorers' top-ranked boards without these acceptance gates or temporal votes. Legal / unchanged / illegal-operation labels and uncertainty are internal model or controller information, not review categories for the user.
 
 ### Automatic acceptance and correction
 
@@ -158,17 +164,13 @@ Checkpoints retain turn, rights, history and pending instructions; piece placeme
 
 Turn constraints reduce opportunities for recognition to run ahead, but an incorrect recognized move can still be legal. Do not assume that a later illegal-board warning will always expose it. Physical testing should include a stationary board on each turn and correction after a false acceptance. Only explicitly edited squares are exported as human labels; automatic acceptance and absence of correction are not ground truth.
 
-### Data and evaluation plan
+### Real-video evaluation — pending
 
-- Target **20,000 unique state transitions × 10 synthetic observations = 200,000 samples**. Each sample contains confirmed previous state, noisy current probabilities, correct target board, operation, noise profile, provenance, and split. Perturb the observation, not the reference or target labels.
-- Replay attributable public PGNs with `python-chess`; supplement rare cases with separately marked, rule-validated generated transitions. Include opening, middlegame, endgame, captures, castling, en passant, all promotion choices, no-ops, and supported mistakes.
-- Simulate type, occupancy, color, neighboring-square, confident-error, and regional-uncertainty profiles with varied affected-square counts. Synthetic probabilities are not measured recognizer outputs.
-- Deduplicate games by initial state and move sequence; deduplicate transitions by canonical previous/current state and operation. Ignore headers and move counters while retaining rule-relevant state. Split source games before augmentation, keep variants together, and exclude physical placements shared across splits.
-- Preserve URLs, licenses, retrieval dates, checksums, seeds, and exclusion counts. Validate a small build before generating the full set.
-- Separately collect **several hundred to 1,000 independently labeled in-domain video move/no-op/mistake events**. Repeated frames are not independent events; copied model predictions are not ground truth. Public still photographs are auxiliary data.
-- Compare the existing pipeline, the same candidate model with fixed weights, and learned weights. Measure candidate coverage, wrong commits, automatic acceptance coverage, exact-board/move accuracy, and time to stable acceptance. Include recovery after a false commit in live evaluation. Tune on validation data and reserve a final evaluation set. Start CPU training on cached probabilities; no image-model backpropagation or GPU is required for this small model.
+A future video evaluation should identify the labeled camera recordings and compare the complete CRF-disabled pipeline with the CRF variants on the same inputs. Each pipeline must advance using its own predicted state and temporal logic; supplying a correct reference before every move measures a different task. Report wrong commits, missed moves, board/move accuracy, and time to acceptance with their denominators. Include stationary boards, legal moves, physical mistakes, occlusion, and recovery after a mistaken reference. E12 is a completed offline photo evaluation; these video measurements remain pending.
 
 ## Experiment entries
+
+Entries record work and checks performed at the stated stage. Historical test-pass counts are not new test runs during this documentation update; the status table above reflects the latest evidence.
 
 ### E01 — Source acquisition and implementation · 2026-10-11
 
@@ -206,87 +208,41 @@ Turn constraints reduce opportunities for recognition to run ahead, but an incor
 
 All targets passed replay or physical-operation checks. The manifest records **65.77 seconds for generation**, excluding acquisition, subsequent validation, and any model training. Ten profiles include clean observations, type confusion on 1/5/10 squares, occupancy/color errors, neighboring-square swaps, confident errors, regional uncertainty, and mixed errors. RNG seed: `20261011`.
 
-**Decision:** Dataset v1 is structurally ready for a candidate-coverage audit and training experiments. Its noise mixture is a synthetic training/stress distribution; it cannot establish acceptance thresholds or production accuracy. Evidence: manifest (`data/crf/synthetic-v1/manifest.json`, local only), validation (`data/crf/synthetic-v1/validation.json`, local only), and the exact generator snapshot (`data/crf/synthetic-v1/generator-source.py`, local only).
+**Decision at this stage:** Dataset v1 passed structural checks and was ready for candidate-coverage auditing and training, subsequently completed in E06/E10. Its noise mixture is a synthetic training/stress distribution; it cannot establish acceptance thresholds or production accuracy. Evidence: manifest (`data/crf/synthetic-v1/manifest.json`, local only), validation (`data/crf/synthetic-v1/validation.json`, local only), and the exact generator snapshot (`data/crf/synthetic-v1/generator-source.py`, local only).
 
 ### E04 — Real photographs, local corrections, and inference · 2026-10-11
 
-**Actions:** Retained 371 public source photographs. From 216 initially valid photographed legal transitions, excluded 28 cross-split overlaps, 10 duplicates, and 2 overlaps with synthetic endpoint placements, leaving **176**. Retained the publisher's setup-based splits: 54 train / 67 validation / 55 test. Rotated images using publisher orientation metadata; no label-based search for the best rotation.
+**Actions:** Retained 371 source photographs from Felix Fabricius's [Robot chess commentator: square dataset](https://huggingface.co/datasets/felixfabricius/robot-chess-commentator-squares). From 216 initially valid photographed legal transitions, excluded 28 cross-split overlaps, 10 duplicates, and 2 overlaps with synthetic endpoint placements, leaving **176**. Retained the dataset's setup-based splits: 54 train / 67 validation / 55 test. Rotated images using the dataset's orientation metadata; no label-based search for the best rotation.
 
 Matched **26 local frames with 27 explicitly labeled squares**. All other squares remain masked, including unchanged labels copied from model output. One incomplete paired record was excluded. These corrections are calibration-only, not whole-board test labels.
 
 **Issue and resolution:** The first frozen-model inference smoke attempt failed on MPS because bicubic antialiased interpolation was unsupported. Enabled `PYTORCH_ENABLE_MPS_FALLBACK=1`, reran the five-image smoke check successfully, and completed inference for all 176 retained public transitions. Model weights stayed frozen. The inference manifest records the checkpoint hash, Torch 2.6.0, MPS device, and CPU fallback setting.
 
-**Measured baseline:** Raw per-square argmax on the 176 external photographs:
+**Evaluation scope:** Each retained item pairs a current photo with the Felix dataset's annotated previous FEN. The old scorer was given that reference as correct for every item; it did not recognize an earlier photo and propagate its prediction. Scores from that protocol remain in the annotated archive. E12 reuses the current-photo probabilities but replaces the annotated reference with sampled synthetic predecessors. Neither protocol measures recognition of a real earlier frame or continuous-video accuracy.
 
-| Metric | Result |
-| --- | ---: |
-| Square accuracy | 80.45% |
-| Exact-board accuracy | 0.57% — 1 of 176 boards |
-
-These are pooled diagnostic results from the frozen recognizer, **before any CRF**. The photographs are already perspective-warped and differ from the application's camera input; base-model pretraining overlap has not been independently audited. This is not a deployment benchmark or a final held-out CRF evaluation. The poor whole-board result warrants investigation before treating this source as representative calibration data.
-
-**Validation:** Zero duplicate real transitions, cross-split placements/setups, or synthetic–real endpoint placement overlaps. Checks establish structural consistency with publisher/user labels, not independent human relabeling. Evidence: inference report (`data/crf/real/robot-v1/moves-inference.json`, local only) and real-data validation (`data/crf/real/validation.json`, local only).
+**Data validation:** Zero audited duplicate transitions, cross-split placements/setups, or synthetic–real endpoint overlaps. These are structural consistency checks, not independent visual relabeling or performance measurements. Local evidence: `data/crf/real/validation.json`.
 
 ### E05 — Consolidate experiment record · 2026-10-11
 
-Converted the original plan into this log, preserving the proposal and adding transition/scoring equations, the confirmation flow, and completed run results. The [dataset build record](crf-data.md) remains the detailed methods and reproduction reference. No model or dataset was changed by this documentation step.
+Originally consolidated the proposal, equations, implementation flow, and experiment history into this log. The full pre-cleanup document is retained in the annotated archive. The dataset build record remains the preparation reference.
 
-### E06 — Training and integration gate · 2026-10-11 · Complete; integration stopped
+### E06 — v1 training record; evaluation archived · 2026-10-11
 
-The user authorized training and conditional application integration: stop if the experiment is unsuccessful. Keep the existing game-level split (160,000 train / 20,000 validation / 20,000 test observations). Implement a 25-weight conditional log-linear model; fit on synthetic training observations only. Freeze the image recognizer. Candidate generation must cover all supported targets without adding the ground-truth candidate specially.
+**Training:** Trained the 25-weight conditional log-linear model on the existing 160,000 synthetic training observations, with 20,000 synthetic validation observations and 20,000 reserved test observations. The image recognizer remained frozen. CPU Adam used 12 epochs, initial learning rate 0.03 reduced by 0.3 after epochs 6 and 9, L2 coefficient 0.001, seed `20261011`, and batches of 32 transitions with all ten noise profiles. Synthetic validation NLL selected the saved checkpoint at **epoch 6 of 12**; this was a training diagnostic, not a camera-accuracy measurement. The synthetic test split was not scored.
 
-Before the full run, set these provisional integration gates: at least 95% exact-board accuracy on synthetic validation, at least 0.2 percentage points above the same scorer with fixed weights, no more than 1 percentage point regression within any operation group, and perfect clean-observation accuracy. After selecting a checkpoint by synthetic validation conditional NLL, evaluate the 67 public validation photographs once: require at least 95% exact-board accuracy and no regression against fixed weights. Require CPU prediction p95 below 50 ms. These are screening criteria for this experiment, not a production accuracy guarantee. A failed validation gate stops work before test scoring or integration. A passing gate requires held-out testing before integration, and in-domain video remains necessary before enabling automatic commits.
+**Implementation:** [Conditional model](../scripts/crf_postprocessor.py), [trainer](../scripts/train_crf.py), and [model tests](../scripts/test_crf_postprocessor.py). Candidate generation includes supported legal moves, unchanged boards, and supported illegal relocations without target-dependent insertion. The fixed scorer shares these candidate constraints and the given previous state; it is not the original application's CRF-disabled video pipeline.
 
-Training uses CPU Adam, 12 epochs, an initial learning rate of 0.03, L2 coefficient 0.001, seed `20261011`, and 32 transitions per batch (all ten observations per transition). A small smoke run checks the trainer without evaluating public photos or test data. The experiment's code and full configuration are copied into each run directory under `data/crf/runs/`.
+**Engineering checks:** Twelve focused tests passed during the original run. The candidate loader was corrected after an interrupted cache-preparation attempt; the completed training run and its source snapshots remain in `data/crf/runs/crf-v1-run2/`.
 
-**Implementation:** [Conditional model](../scripts/crf_postprocessor.py), [trainer](../scripts/train_crf.py), and [model tests](../scripts/test_crf_postprocessor.py). The 25 weights multiply 13 class log-probability features, three empty/white/black log-probability features, probability fit, argmax agreement, and seven operation flags. Visual terms are computed as differences from the confirmed reference; this subtracts the same constant from every candidate score and preserves the conditional distribution. Enumerate all legal moves, unchanged, and all v1-supported illegal relocations, with no target-dependent pruning. The fixed baseline uses the same candidates and a sum of log probabilities, without learned weights.
+**Artifacts retained:** [crf-postprocessor-v1.json](../research/models/crf-postprocessor-v1.json), SHA-256 `5b5b265f6399e6c600202cae5d8e165fd6bd9db2e3cf31e5c194229aaee827db`. Configuration, epoch history, raw offline reports, and saved weights remain in the original run directory. Their numerical evaluation and historical screening decisions are available only in the annotated archive and local artifacts, not as current real-video results.
 
-**Execution:** Twelve focused tests passed, including special-move coverage, illegal piece-identity preservation, dense/sparse/PyTorch score agreement, gradient checks, variable candidate padding, and blocking integration after failed real validation. A 64-transition / 640-observation trainer smoke run completed first. The first full attempt was interrupted during cache preparation because it repeatedly decompressed NPZ arrays; the loader was corrected to read each member once. No weights were trained in that interrupted attempt. The successful full run is `data/crf/runs/crf-v1-run2/`; its code snapshots and configuration preserve the executed version.
+### E07 — Live integration and correction-only workflow · 2026-10-11
 
-**Coverage and compute:** All 18,000 train/validation transitions had exactly one matching target candidate, with no ground-truth insertion. Mean candidate count was 606.75; maximum 965. Cache preparation and coverage checks took 38.10 seconds. All 12 CPU optimization epochs plus their validation passes took **34.94 seconds**, excluding preparation and final evaluations. Selected epoch 6 by the lowest synthetic validation conditional NLL (0.04910). The frozen image model was not retrained, and no GPU was used for CRF fitting.
-
-**Results — exact-board accuracy:**
-
-| Dataset | Observations | Raw per-square argmax | Fixed candidate scoring | Trained CRF |
-| --- | ---: | ---: | ---: | ---: |
-| Synthetic training | 160,000 | 10.00% | Not measured | 98.2825% |
-| Synthetic validation | 20,000 | 10.00% | 94.595% | 98.280% |
-| Public-photo validation | 67 | 0/67 | 36/67 — 53.73% | 43/67 — 64.18% |
-
-The low synthetic raw baseline follows the deliberately noisy profile mixture: nine of ten profiles introduce errors. It is not an estimate of the recognizer's camera accuracy. The public validation photos retain publisher setup splits and were neither fitted nor used for checkpoint selection. This single-frame comparison cannot evaluate the existing application's temporal consensus or end-to-end confirmation latency.
-
-Synthetic validation by true operation:
-
-| Operation | Observations | Fixed exact-board accuracy | Trained exact-board accuracy |
-| --- | ---: | ---: | ---: |
-| Legal move | 18,000 | 95.906% | 98.444% |
-| Unchanged | 1,500 | 77.800% | 96.600% |
-| Illegal relocation | 500 | 97.800% | 97.400% |
-
-All clean observations remained correct. The largest residual synthetic weakness was regional uncertainty (91.20% exact-board accuracy). Incorrect legal proposals fell from 514 to 266 overall, but illegal examples misclassified as legal increased from 1 to 3; the aggregate gain does not eliminate this failure mode. These are **offline proposals, not committed moves**.
-
-The real-photo model made 24 errors: seven wrong legal moves and 17 false illegal-relocation proposals. Fourteen of those errors had a conditional posterior of at least 0.90, including two at least 0.99. The model's posterior over a restricted candidate set is therefore insufficient as an automatic-acceptance signal on these photos.
-
-Full CPU prediction, including candidate generation, took median **2.64 ms** and p95 **3.47 ms** per public validation observation with probabilities already cached. This excludes camera capture, image recognition, and confirmation delays; it is not end-to-end latency.
-
-**Decision:** Six of seven screening checks passed; public-photo exact-board accuracy failed the predefined 95% minimum. Per the user's instruction, stopped before integration and branch merge. At the end of E06, the saved checkpoint was explicitly experimental, returned `review_required`, and was not loaded by the application. E07 records the subsequent user-authorized integration. The 20,000 synthetic test observations and 55 public test examples were not scored by this CRF, and no additional tuning followed the failed gate. Public-photo raw recognizer results from E04 predate this training run and are not a new CRF test result.
-
-**Artifacts:** Run configuration (`data/crf/runs/crf-v1-run2/config.json`, local only), candidate coverage (`data/crf/runs/crf-v1-run2/candidate-coverage.json`, local only), epoch history (`data/crf/runs/crf-v1-run2/history.json`, local only), saved model (`data/crf/runs/crf-v1-run2/model.json`, local only), full report and gate decision (`data/crf/runs/crf-v1-run2/report.json`, local only), and public validation errors (`data/crf/runs/crf-v1-run2/real-learned-validation.json`, local only).
-
-Reproduce from the repository root, choosing a new output directory:
-
-```bash
-research/edgetam-env/bin/python -m unittest discover -s scripts -p 'test_crf_*.py' -v
-research/edgetam-env/bin/python scripts/train_crf.py --output data/crf/runs/reproduction-v1 --epochs 12 --batch-size 32
-```
-
-### E07 — Live integration and correction-only workflow · 2026-10-11 · Ready for local trial
-
-**Authorization and scope:** After E06 stopped, the user explicitly requested application integration on the existing branch and will test it personally. The user then clarified that ordinary recognition must not require approval or manual labels such as legal / unchanged / incomplete / physical mistake. A stable observation is provisionally accepted subject to the turn rules unless the user opens **Fix recognition**. This superseded the initial mandatory-confirmation policy. E06's measured results and failed gate remain unchanged.
+**Authorization and scope:** After E06 stopped, the user explicitly requested application integration on the existing branch and will test it personally. The user then clarified that ordinary recognition must not require approval or manual labels such as legal / unchanged / incomplete / physical mistake. A stable observation is provisionally accepted subject to the turn rules unless the user opens **Fix recognition**. This superseded the initial mandatory-confirmation policy. The historical offline screening is preserved in the annotated archive; this entry records implementation rather than video performance.
 
 **Runtime:** Packaged the unchanged 25-weight checkpoint at `research/models/crf-postprocessor-v1.json` (SHA-256 `5b5b265f6399e6c600202cae5d8e165fd6bd9db2e3cf31e5c194229aaee827db`). The live adapter calls the same candidate generator and numerical score as training; ChessQ Lite V4's weights remain frozen. The checkpoint's `review_required` / `automatic_commit: false` fields preserve its original training artifact metadata; the explicitly authorized trial's acceptance policy lives in the game controller, not those fields.
 
-The adapter reads the original 64 × 13 probabilities, conditions candidates on edited squares, and screens proposals using relative probability ≥ 0.60, score gap ≥ 0.7 where multiple candidates remain, mean log visual fit ≥ log(0.25), no strong occupancy contradiction, and changed-square occupancy/color support ≥ 0.55. It requires three independent supporting frames spanning ≥ 0.45 seconds in a four-frame window, with two consecutive agreeing frames. These heuristics have not been calibrated on in-domain video; the span is a minimum stability interval, not measured end-to-end latency. Missing/invalid probabilities or a missing checkpoint hold the live CRF path.
+The adapter reads the original 64 × 13 probabilities, conditions candidates on edited squares, and screens proposals using relative probability ≥ 0.60, score gap ≥ 0.7 where multiple candidates remain, mean log visual fit ≥ log(0.25), no strong occupancy contradiction, and changed-square occupancy/color support ≥ 0.55. It requires three distinct supporting camera readings spanning ≥ 0.45 seconds in a four-reading window, with two consecutive agreeing readings. Distinct readings are not statistically independent observations. These heuristics have not been calibrated on in-domain video; the span is a minimum stability interval, not measured end-to-end latency. Missing/invalid probabilities or a missing checkpoint hold the live CRF path.
 
 **Turn protocol:** An unchanged board retains the reference and turn. A stable player move passes through the existing chess-rule controller. While the engine is thinking, observations cannot commit another move. Once the engine emits its instruction, fresh consensus is required and only that pending move's complete position can commit. Unsupported/incomplete or ambiguous evidence holds; an observed illegal move can produce existing board guidance but cannot enter the legal move history. These are internal decisions, with no classification buttons. The application cannot guarantee that every mistaken recognition will later produce an illegal position; real-camera false-commit measurement remains outstanding.
 
@@ -304,20 +260,126 @@ for test in validation/test_ui_*.cjs; do node "$test" || exit; done
 
 Quit any already-running Camera Chess instance before launching the updated application. The CRF is enabled by default in this branch. For a direct-server baseline comparison, `CHESS_CRF=0 research/edgetam-env/bin/python validation/lite_live_server.py` selects the previous recognition path. Do not run two servers on port 8769.
 
-**Status:** Implementation complete; awaiting the user's physical-board test. No re-training, held-out CRF test scoring, commit, push or merge during this integration. Representative video accuracy, false-commit rate and end-to-end latency remain unmeasured.
+**Status at this stage:** Implementation complete and ready for the user's physical-board test; E09 subsequently records initial feedback. No re-training or held-out CRF test scoring occurred during E07. Representative video accuracy, false-commit rate and end-to-end latency remain unmeasured.
 
 ### E08 — Reconcile the experiment document with the implemented flow · 2026-10-11
 
 Revised the main design section, state definitions, update equation and flowchart to describe automatic acceptance with optional state correction. Removed the obsolete mandatory-review diagram and duplicated correction flow. Documented current-state-first reconciliation, rollback on either turn, the turn protocol that prevents advancement while thinking, and the fact that lack of correction is not a human label. The dataset record now distinguishes internal operation labels from user annotations.
 
-This entry changes documentation only. Dataset counts, training outcomes, E06's failed gate and E07's recorded verification results are retained. No new test run or camera measurement is reported; current status remains ready for the user's physical-board trial on `accuracy-improvement`.
+This entry changed documentation only. Dataset counts and E07's implementation checks are retained; historical numerical evaluation is now in the annotated archive. No new test run or camera measurement was reported at this stage; subsequent trial feedback appears in E09.
 
 ### E09 — Initial physical-board feedback and commit preparation · 2026-10-11
 
-**Manual feedback:** Recognition worked reasonably well in an initial trial. A computer pawn promotion to a knight left the Confirm button unavailable. This is qualitative feedback, not an accuracy measurement. Reproduction, diagnosis and a fix remain pending; the promotion implementation is unchanged in this snapshot.
+**Manual feedback:** Recognition worked reasonably well in an initial trial. A computer pawn promotion to a knight left the Confirm button unavailable. This is qualitative feedback, not an accuracy measurement. The current README still lists this as unresolved; E12 does not test the promotion UI or establish a fix.
 
 **Next validation:** Reproduce computer underpromotion with both a replacement piece and a pawn substitute, then continue physical-board recognition and correction tests. Preserve the failing case locally when available; no private camera image or game record is included in the repository.
 
 **Documentation and checks:** Updated all three README versions with the ChessQ Lite V4 → separately trained CRF pipeline, experiment links and the known promotion issue. Re-ran 166 application Python tests, 12 CRF/data tests and seven UI test scripts; all passed. These automated checks did not reproduce or resolve the reported physical-board issue. Local dataset and run-artifact references are paths rather than links to files that will not be published.
 
-**Commit scope:** Application changes, reproducible data/training scripts, tests, documentation and the 25-weight CRF checkpoint. Downloaded/generated datasets, raw camera frames, saved games, correction archives, logs and local environments are excluded. Prepared for a local commit on `accuracy-improvement`; no push or branch merge is part of this step.
+**Repository record:** The application integration, data/training scripts, tests, documentation and v1 checkpoint were subsequently recorded in local commit `56850cf` (`Add trained CRF board recognition and correction recovery`). Downloaded/generated datasets, raw camera frames, saved games, correction archives, logs and local environments remain excluded. Commit `a0efb46` later removed provisional CRF parameter details from the READMEs. This documentation update does not create a commit or establish any push/merge status.
+
+### E10 — v2-250 training record; evaluation archived · 2026-10-11
+
+**Scope:** The additional experiment was saved separately as `crf-v2-250-run1`, model ID `crf-v2-250`, checkpoint schema 2. The original v1 checkpoint and run records were preserved. The application continues to use v1; no model replacement was made by this training experiment.
+
+**Model fixed before the full run:** Implemented [v2 scoring](../scripts/crf_postprocessor_v2.py) and a [separate trainer](../scripts/train_crf_v2.py). Candidate generation, class/square ordering, and supported transitions are exactly those of E06. The scorer has a fixed sum-log-probability term plus 250 learned residual coefficients:
+
+| Feature family | Parameterization | Weights |
+| --- | --- | ---: |
+| Cross-class visual evidence | 12 non-reference output classes × 13 input log probabilities | 156 |
+| White/black occupancy evidence | 12 output classes × 2 group log probabilities | 24 |
+| Class-specific probability and confidence calibration | 13 classes × (probability, normalized entropy × class log probability, top-two margin × class log probability) | 39 |
+| Agreement with the recognizer's top class | One coefficient per candidate class | 13 |
+| Confidence-dependent class preference | Maximum input probability × 12 non-reference output classes | 12 |
+| Operation preference | Legal, illegal, capture, castling, en passant, promotion; unchanged is the reference | 6 |
+| **Total** | | **250** |
+
+The empty class fixes the common-score freedom in the confusion/group matrices and confidence-dependent class preference. Empty-group evidence is already an input to the confusion matrix, so it is not duplicated. All weights are shared across squares. There are no position-specific or video-history features: the current synthetic probability data do not supply measured camera-location errors or continuous-video histories. This remains a single-step conditional log-linear model, not a new image recognizer. Numerical tests verify that any v1 scorer can be embedded in this family without changing its conditional distribution; that embedding is not used to initialize training.
+
+**Training record:** Used the same 160,000 synthetic training observations and 20,000 synthetic validation observations, the original split assignments, and all ten noise profiles. As in E06: CPU Adam, seed `20261011`, 12 epochs, 32 transitions per batch, learning rate 0.03 reduced by 0.3 after epochs 6 and 9, and L2 coefficient 0.001. Initialization reproduces fixed sum-log-probability scoring. Synthetic validation NLL selected **epoch 8 of 12**. v2 regularizes residual coordinates, so an equal L2 coefficient does not imply the same prior over scoring functions as v1. This compares two trained feature/regularization configurations, not parameter count in isolation, and does not identify an optimal CRF size.
+
+**Engineering checks:** All 16 focused CRF/data tests passed, including checks of v1 score embedding, NumPy/PyTorch score and gradient agreement, candidate padding, and cross-version checkpoint rejection. The separate smoke run completed before full training. All 13 protected v1 source/checkpoint/run-JSON artifacts retained their hashes. No held-out CRF test scoring or application integration was performed during E10. E12 later evaluated the Felix dataset test split; the synthetic test split remains unscored.
+
+**Artifacts retained:** [crf-postprocessor-v2-250.json](../research/models/crf-postprocessor-v2-250.json), SHA-256 `e441f01ebc1c0d43907c676a751d5e8a38f3fc89fd9d2c23e22603509d4d804e`. Full local run: `data/crf/runs/crf-v2-250-run1/`; console output: `data/crf/runs/crf-v2-250-run1.log`; smoke run: `data/crf/runs/crf-v2-250-smoke1/`. Numerical comparison tables, epoch metric rows, and conclusions from the former protocol were moved out of the active log into the annotated archive. No claim about which variant performs better on real video is retained.
+
+### E11 — Archive the former evaluation and reset the active record · 2026-10-11
+
+At the user's request, saved the complete pre-cleanup log under a separate name with an evaluation-scope warning, then retained this file's original name and removed the former synthetic/static-photo accuracy tables, epoch metric tables, screening claims, and associated performance conclusions. Model definitions, training provenance, data preparation, and implementation records remain. The original model/data/run files were not modified. Real-video results are pending work under a separately established evaluation protocol.
+
+### E12 — Felix dataset photo comparison with sampled synthetic previous states · 2026-10-11
+
+**Question and training link:** Compare the saved E06 v1 checkpoint (25 weights, epoch 6 of 12) and E10 v2 checkpoint (250 weights, epoch 8 of 12) under supplied synthetic reference states. Both were fitted on the same synthetic training split and selected by synthetic validation NLL. This evaluation performs no fitting, checkpoint selection, or application replacement.
+
+**Protocol and inputs:** All 176 retained photos from Felix Fabricius's [Robot chess commentator: square dataset](https://huggingface.co/datasets/felixfabricius/robot-chess-commentator-squares), revision `d71ba52761e497b18bbe5743efcbafb0d1f21091`, use the same cached frozen-recognizer `64 × 13` probabilities across methods. There are 23 dataset setups: 54 train photos / 8 setups, 67 validation / 5 setups, and 55 test / 10 setups. `train`, `validation`, and `test` are Felix's original photo partitions, not CRF training-data splits.
+
+**Recognizer identity and official evaluation:** The raw baseline is the exact frozen **ChessQ Lite V4** checkpoint shipped with this application: release `cq-vit-s-644-v4-seed2-safetensors-fp16-r2`, ViT-S FP16, local SHA-256 `fd269bcfdefe6208b75490d7ac72524c0970f8212470a88012ce755b5f092d10`. This checkpoint is from Joël Seytre's [ChessQueries project](https://github.com/JSeytre/chessqueries); Felix Fabricius supplied the photo dataset, not the recognizer. The [Lite model card](https://huggingface.co/joelseytre/chessq-lite) describes V4 as a smaller recognizer further trained on proprietary data.
+
+The [ChessQueries paper](https://arxiv.org/abs/2608.30762) reports exact-board accuracy of **99.5% / 98.5% / 87.1% / 87.6%** on ChessReD / ChessCog / SLCC / CVChess for its main ViT-L model; its ViT-S ablation reports **98.6% / 97.7% / 75.9% / 49.4%**. Neither is this exact Lite V4 checkpoint. The official [Lite V4 validation file](https://huggingface.co/joelseytre/chessq-lite/blob/main/cq-vit-s-644-v4-seed2-safetensors-fp16-r2-validation.json) reports **98.6% / 97.4% / 78.0% / 100%** on those benchmarks, but is an FP32-to-FP16 export-consistency check, not an independent accuracy evaluation. The official materials reviewed do not report Felix-dataset results or establish overlap with proprietary training data.
+
+The [evaluator](../scripts/evaluate_crf_synthetic_previous.py) constructs a finite pool of predecessor FENs by reversing supported moves from the **current piece placement labeled in the Felix dataset**. Each predecessor passes `python-chess` position-validity checks and has a verified legal forward move yielding exactly that placement. With seed `20261011`, hash-priority sampling without replacement selects up to ten distinct FENs per photo; the first five match the five-state run, and the first one supplies the single-state result.
+
+This is sampling from the implemented generator's pool, not an exhaustive enumeration of every historical FEN or a sample of observed game histories. Ordinary generated predecessors have no castling rights or en passant square; the special-move constructions supply the necessary fields. Either moving color may be constructed. The matching target is the 64-square piece placement, not the full rule state or the Felix dataset's recorded preceding move.
+
+**What the baselines mean:** Raw per-square argmax uses only the current photo probabilities and receives no predecessor. The fixed scorer and both CRFs receive the identical sampled predecessor and share the candidate generator: legal successors, unchanged placement, and supported illegal relocations. The fixed scorer has no learned coefficients and maximizes the sum of visual log probabilities. It already benefits from the supplied state and candidate constraints. None of these rows runs the full CRF-disabled application, live acceptance gates, or temporal voting. The target was present in every candidate set by construction and verified in every condition; 100% target coverage here is not a deployment coverage estimate.
+
+**Metrics and denominators:**
+
+“All correct” refers to **all predicted current boards being correct**, not to the predecessors being correct. Each prediction must match all 64 labeled squares; a photo passes only if every selected predecessor yields that exact board. This is not majority voting, an average of five/ten predictions, or a sequence with predicted-state feedback.
+
+- **One random predecessor:** the first sampled state; 176 eligible photos.
+- **All correct with 5 different predecessors:** first five predictions all exact; 174 eligible photos and 876 total conditions in the five-state run. Two generator pools have only 2 and 4 predecessors.
+- **All correct with 10 different predecessors:** all ten predictions exact; 172 eligible photos and 1,738 total conditions in the ten-state run. Two additional pools have only 6 predecessors each.
+
+Photos lacking the requested number are excluded only from that all-correct denominator; their available conditions remain in the per-condition records. Multiple predecessors reuse the same photograph and probabilities, so they are repeated conditions, not additional independent images. The eligible photo sets differ between five and ten; compare the displayed fractions with their denominators. On the shared eligible photos, passing all ten necessarily includes passing the first five.
+
+**All-photo results — descriptive:**
+
+| Method | One random predecessor | All correct with 5 different predecessors | All correct with 10 different predecessors |
+| --- | ---: | ---: | ---: |
+| Raw per-square argmax | 1/176 — 0.57% | 1/174 — 0.57% | 1/172 — 0.58% |
+| Fixed log-probability scorer | 114/176 — 64.77% | 85/174 — 48.85% | 71/172 — 41.28% |
+| CRF v1 — 25 weights | 125/176 — 71.02% | 94/174 — 54.02% | 80/172 — 46.51% |
+| CRF v2 — 250 weights | 122/176 — 69.32% | 95/174 — 54.60% | 80/172 — 46.51% |
+
+**Results by Felix dataset split:** Cells below are correct photos / eligible photos, using the same definitions.
+
+| Felix dataset split | Method | One random predecessor | All correct with 5 different predecessors | All correct with 10 different predecessors |
+| --- | --- | ---: | ---: | ---: |
+| train | Raw per-square argmax | 1/54 | 1/53 | 1/53 |
+| train | Fixed log-probability scorer | 44/54 | 36/53 | 31/53 |
+| train | CRF v1 — 25 weights | 45/54 | 39/53 | 34/53 |
+| train | CRF v2 — 250 weights | 45/54 | 40/53 | 35/53 |
+| validation | Raw per-square argmax | 0/67 | 0/66 | 0/64 |
+| validation | Fixed log-probability scorer | 44/67 | 28/66 | 22/64 |
+| validation | CRF v1 — 25 weights | 48/67 | 33/66 | 25/64 |
+| validation | CRF v2 — 250 weights | 46/67 | 34/66 | 25/64 |
+| test | Raw per-square argmax | 0/55 | 0/55 | 0/55 |
+| test | Fixed log-probability scorer | 26/55 | 21/55 | 18/55 |
+| test | CRF v1 — 25 weights | 32/55 | 22/55 | 21/55 |
+| test | CRF v2 — 250 weights | 31/55 | 21/55 | 20/55 |
+
+The 67-photo Felix validation split had already been inspected in earlier experiments, so the 176-photo total is descriptive. The 55-photo Felix test split was not used for those prior validation comparisons or CRF fitting, but **has now been evaluated and exposed**. It must not be described as untouched in future tuning. The frozen recognizer's pretraining overlap with this dataset has not been independently audited. The synthetic 20,000-observation test split remains unscored.
+
+**Uncertainty and interpretation:** Paired differences use the same predecessors and photos. Confidence intervals use 20,000 bootstrap resamples of Felix dataset setups, retaining all photos within a sampled setup.
+
+| Photo-level metric | v1 minus v2 | 95% setup-bootstrap interval |
+| --- | ---: | ---: |
+| One random predecessor | +1.70 pp | -2.72 to 6.73 pp |
+| All correct with 5 different predecessors | -0.57 pp | -3.11 to 1.96 pp |
+| All correct with 10 different predecessors | +0.00 pp | -2.37 to 2.38 pp |
+
+All three intervals include zero. v1 leads by three photos with one predecessor; v2 leads by one photo with five; both pass on 80/172 with ten. On the test split, v1 leads by one photo under each metric. These results do not establish a reliable model-size winner or show that 25 weights are insufficient. Differences reflect the complete feature/regularization configurations, not parameter count alone. Intervals condition on this seed's generated states; they do not measure sensitivity across new predecessor samples or new camera domains.
+
+**Limits:** Current images are real rectified still photos, but the previous state uses the correct current label to guarantee a one-legal-move relationship. The experiment measures conditional scoring with that privileged reference. It does not test recognition of an actual previous image, incorrect-reference recovery, unchanged/illegal target events, hand occlusion over time, wrong commits, or end-to-end latency. Its value is an offline comparison and a check of sensitivity to different supplied predecessors; real continuous-video evaluation remains pending.
+
+**Raw recognizer audit of Felix's original test partition:** The source test partition contains 88 images; 55 are retained for the CRF comparison after transition/label consistency and overlap filters. Running the frozen ChessQ Lite V4 checkpoint directly on all 88 images, without CRF or a predecessor, gave **0/88 exact boards** and **76.14% square accuracy** (48.73/64 squares correct per image on average). The retained 55-image subset gave 0/55 exact and 76.28% square accuracy; direct predictions matched the cached values for all 55. Thus the 55-photo filter does not account for the zero exact-board result. This is Felix-dataset performance, not the model's published benchmark result or a verified holdout from its undisclosed proprietary training data. The [raw-test audit script](../scripts/audit_chessq_lite_photo_test.py) reproduces this check; its per-image JSON is in the Git-ignored run directory.
+
+**Evidence and reconciliation:** The [evaluation report](crf-real-photo-synthetic-previous-evaluation.md) contains per-square means, individual-method intervals, and reproduction commands. The local JSON records contain each sampled FEN, legal forward move, candidate count/index, and each method's exact-match flag and square accuracy; they do not store the full predicted boards. During this review, the earlier text still contained results from the superseded sampling implementation. Replaced those figures with the current nested-sampling results, and fully reran both five- and ten-state evaluations into temporary audit files: all JSON fields matched, and all five-state conditions exactly matched the corresponding ten-state prefix. No source result, model, or dataset was overwritten by this audit.
+
+| Audited artifact | SHA-256 |
+| --- | --- |
+| `scripts/evaluate_crf_synthetic_previous.py` | `25bce8ae35bd2e3ceff0f6f8da1da3619a27d821ab1c3932e4acb7f2042ed221` |
+| `data/crf/runs/real-photos-synthetic-previous-v1/all-seed20261011-n5.json` | `9502d4fcdb65baabb62e225d512fe398eb7de3ec2a74210ac02baafbd28374e8` |
+| `data/crf/runs/real-photos-synthetic-previous-v1/all-seed20261011-n10.json` | `d3d849f095916bf19ebff35d12434ef8520a983dc13392188be8faf5caa827c1` |
+
+Model hashes remain those recorded in E06/E10. Cached photo probabilities: `974dcbe44e2d3cf734592adc097b60133bbd50bd27e61317ca20011310b03fc2`; frozen image checkpoint: `fd269bcfdefe6208b75490d7ac72524c0970f8212470a88012ce755b5f092d10`. Both were checked against the input files. Bulk artifacts are local and Git-ignored.

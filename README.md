@@ -47,7 +47,7 @@ flowchart TD
 
 The CRF is trained separately; the image recognizer's weights stay unchanged. It scores candidate positions using the previous board and current piece probabilities. Stable readings continue automatically through the turn rules. During the computer's turn, only its instructed move can be accepted; while it is thinking, another move cannot be committed. Corrections reconcile the edited board with current and recent positions and discard engine replies based on a mistaken move.
 
-The CRF and UI are still being tuned. Synthetic validation results do not establish real-world camera accuracy. See the [experiment log](docs/crf-experiment-log.md) for the design, validation results and current limitations, and the [dataset build record](docs/crf-data.md) for sources and reproducible preparation. Downloaded datasets, camera frames, saved games, correction archives and run logs stay local and are excluded from Git; the repository includes code, documentation and the small trained CRF checkpoint.
+The CRF and UI are still being tuned. Synthetic validation and offline still-photo evaluation with constructed previous states do not establish continuous camera-stream accuracy. See the [experiment log](docs/crf-experiment-log.md) and [real-photo evaluation report](docs/crf-real-photo-synthetic-previous-evaluation.md) for results and scope, and the [dataset build record](docs/crf-data.md) for sources and reproducible preparation. Downloaded datasets, camera frames, saved games, correction archives and run logs stay local and are excluded from Git; the repository includes code, documentation and the small trained CRF checkpoint.
 
 ## V1 performance
 
