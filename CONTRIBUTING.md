@@ -10,7 +10,7 @@ Follow the setup commands in [README.md](README.md). Application code is in `val
 
 ```bash
 research/edgetam-env/bin/python -m unittest discover -s validation -p 'test_*.py'
-node validation/test_ui_audio.cjs
+for test in validation/test_ui_*.cjs; do node "$test" || exit; done
 ```
 
 Keep changes focused and describe how you checked the behavior. For camera-dependent changes, record the hardware and conditions used. Do not commit runtime logs, saves, private photos, downloaded model weights, local environments, or compiled applications. Respect the upstream ChessQueries/ChessQ Lite and Stockfish licenses described in the README.

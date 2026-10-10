@@ -135,39 +135,43 @@ class OrientationTests(unittest.TestCase):
         self.assertEqual(g.original_near,'white');self.assertTrue(g.computer)
         self.assertEqual(g.snapshot(105.2)['board_svg'],flipped_svg)
 
-    def test_endgame_flip_and_resume_keep_orientation_independent_of_player(self):
-        import time
-        g=Game(object());g.start_endgame()
-        placement='7k/8/8/8/8/8/4P3/K7'
-        def feed(near,start):
-            for i in range(start,start+9):
-                r=self.record(near,i);r['raw']=placement
+    def test_endgame_player_choice_does_not_wait_for_geometry(self):
+        for player in ('white','black'):
+            g=Game(object());g.start_endgame(player=player)
+            self.assertEqual(g.computer,player=='black')
+            for i in range(6):
+                r=self.record(None,i,'uncertain');r['raw']='7k/8/8/8/8/8/4P3/K7'
                 g.observe(r,i*.4,100+i*.4)
-        feed('black',0)
-        self.assertEqual(g.state,'endgame_ready');self.assertEqual(g.original_near,'black')
-        feed('white',10)
-        self.assertEqual(g.orientation_status,'mismatch')
-        self.assertIn('Restart Game',g.snapshot(103.6)['orientation_detail'])
-        feed('black',20)
-        g.last_frame=time.time()
-        # Computer color is independent of physical direction in custom positions.
-        g.confirm_endgame(placement,'black','black')
-        self.assertTrue(g.computer);self.assertTrue(g.side_auto)
-        g.resume_current();self.assertTrue(g.side_auto)
-        self.assertEqual(g.original_near,'black');self.assertEqual(g.state,'reconcile')
-        feed('white',30)
-        self.assertEqual(g.orientation_status,'mismatch');self.assertEqual(g.state,'reconcile')
-        feed('black',40)
-        self.assertEqual(g.state,'player_turn');self.assertTrue(g.computer)
-        self.assertEqual(g.detected_near,'black')
+            self.assertEqual(g.state,'endgame_ready')
+            self.assertFalse(g.snapshot(102)['needs_orientation'])
+            self.assertTrue(g.side_confirmed)
+            self.assertIsNone(g.detected_near)
 
-    def test_loaded_standard_game_checks_direction_before_your_turn(self):
-        g=Game(object());g.reset(computer='auto')
-        for i in range(5):g.observe(self.record('black',i),i*.4,100+i*.4)
-        data=g.serialize();g.load_data(data,automatic=True,strict=True)
-        for i in range(5,10):g.observe(self.record('white',i),i*.4,100+i*.4)
-        self.assertEqual(g.state,'reconcile');self.assertEqual(g.orientation_status,'mismatch')
-        for i in range(10,19):g.observe(self.record('black',i),i*.4,100+i*.4)
-        self.assertEqual(g.state,'player_turn')
+
+    def test_load_and_resume_use_saved_sides_without_camera_geometry(self):
+        for mode in ('standard','endgame'):
+            for computer in ('white','black'):
+                with self.subTest(mode=mode,computer=computer):
+                    g=Game(object());g.reset(computer=computer,aligned=True)
+                    if mode=='endgame':
+                        g.mode=mode;g.board=chess.Board('7k/8/8/8/8/8/4P3/K7 w - - 0 1')
+                        g.initial_fen=g.board.fen()
+                    g.board.turn=computer=='black';g.initial_fen=g.board.fen()
+                    if mode=='standard' and computer=='white':
+                        g.board=chess.Board();g.initial_fen=chess.STARTING_FEN
+                        g.commit(chess.Move.from_uci('e2e4'))
+                    g.state='player_turn';g.original_near='white'
+                    data=g.serialize();g.load_data(data,automatic=True,strict=True)
+                    for attempt in range(2):
+                        self.assertEqual(g.computer,computer=='white')
+                        self.assertFalse(g.side_auto);self.assertTrue(g.side_confirmed)
+                        self.assertFalse(g.snapshot(100)['needs_orientation'])
+                        for i in range(8):
+                            r=self.record(None,i,'uncertain');r['raw']=g.physical().board_fen()
+                            g.observe(r,i*.4,100+i*.4)
+                        self.assertEqual(g.state,'player_turn')
+                        self.assertEqual(g.original_near,'white')
+                        self.assertEqual(g.computer,computer=='white')
+                        g.clear_observations();g.resume_current()
 
 if __name__=='__main__':unittest.main()

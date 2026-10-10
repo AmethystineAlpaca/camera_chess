@@ -11,7 +11,7 @@ from PIL import Image
 from torchvision.io import decode_image,ImageReadMode
 from chessqueries.models.checkpoint import load_safetensors_model
 from chessqueries.data.transforms import build_transform
-from chessqueries.core import Board
+from chessqueries.core import Board, Piece
 from lite_consensus import Consensus
 from board_orientation import forward_with_geometry,infer_orientation
 D=R/'validation/frames/lite-live';O=R/'validation/results/lite-live';O.mkdir(exist_ok=True)
@@ -32,7 +32,9 @@ handler=RotatingFileHandler(O/'events.jsonl',maxBytes=5_000_000,backupCount=2);h
 with torch.inference_mode():
  while running and not (D/'STOP').exists() and not (D/'RESTART_READER').exists():
   try:
-   h,j=(D/'latest.bin').read_bytes().split(b'\n',1);seq,ts=h.decode().split(',');seq=int(seq);ts=float(ts)
+   h,j=(D/'latest.bin').read_bytes().split(b'\n',1)
+   seq,ts=h.decode().split(',');seq=int(seq);ts=float(ts)
+   metadata={'sequence':seq,'capture_time':ts}
   except (FileNotFoundError,ValueError):time.sleep(.1);continue
   if time.time()-ts>3:
    write('status.json',json.dumps(dict(phase='stale',detail='Camera feed interrupted. Retaining the last recognized position.',updated=time.time(),capture_time=ts,confirmed=confirmed,confirmed_at=confirmed_at)));time.sleep(.2);continue
@@ -60,7 +62,15 @@ with torch.inference_mode():
    print('CONFIRMED',confirmed,flush=True)
   detail='Detected position is stable' if phase=='stable' else 'Checking changes. Retaining the last stable detection.'
   processed+=1;times.append(elapsed);times=times[-30:];record=dict(phase=phase,detail=detail,updated=time.time(),capture_time=ts,sequence=seq,raw=fen,confirmed=confirmed,confirmed_at=confirmed_at,votes=min(votes,5),min_score=conf,min_margin=margin,piece_count=pieces,seconds=elapsed,capture_to_result=time.time()-ts,processing_fps=1/(sum(times)/len(times)),processed=processed,changed=changed,version=2,change_score=score,square_scores={chess.square_name(chess.square(i%8,7-i//8)):float(v) for i,v in enumerate(top.values[:,0].tolist())})
+  # Preserve the runner-up evidence so a human correction can survive label
+  # jitter without hiding a confidently empty square or a replacement piece.
+  record['square_probabilities']={chess.square_name(chess.square(i%8,7-i//8)):{Piece(k).symbol:float(p) for k,p in enumerate(row)} for i,row in enumerate(probs.tolist())}
+  record['camera_metadata']=metadata
+  record['model']='chessq-lite.safetensors'
+  record['input_size']=644
   if orientation is not None:record.update(orientation=orientation,orientation_at=ts)
+  # Keep the exact classifier input and result together for correction evidence.
+  image_write('observation.bin',json.dumps(record,ensure_ascii=False).encode()+b'\n'+j)
   write('status.json',json.dumps(record,ensure_ascii=False));
   if fen!=last_raw:write('raw.svg',svg(fen));last_raw=fen
   image_write('live.jpg',j);log.info(json.dumps(record))

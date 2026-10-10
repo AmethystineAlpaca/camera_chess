@@ -24,9 +24,9 @@ class LifecycleTests(unittest.TestCase):
         pages.heartbeat('one')
         self.assertTrue(pages.open_browser())
         self.now = 11
-        self.assertFalse(pages.open_browser())
+        self.assertTrue(pages.open_browser())
 
-    def test_refresh_grace_and_last_tab_crash(self):
+    def test_refresh_grace_and_explicit_last_tab_close(self):
         pages = BrowserPresence(clock=self.clock)
         pages.heartbeat('one')
         pages.heartbeat('two')
@@ -44,7 +44,17 @@ class LifecycleTests(unittest.TestCase):
         pages.heartbeat('refresh')
         self.assertTrue(pages.has_pages())
         self.now = 21
-        self.assertFalse(pages.has_pages())
+        self.assertTrue(pages.has_pages())
+
+    def test_background_timer_freeze_does_not_stop_camera_or_duplicate_tab(self):
+        pages = BrowserPresence(clock=self.clock)
+        pages.heartbeat('background')
+        self.now = 3600
+        self.assertFalse(pages.should_stop_camera())
+        self.assertTrue(pages.open_browser())
+        pages.leave('background')
+        self.now += 4
+        self.assertTrue(pages.should_stop_camera())
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,20 +1,24 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Camera Chess</title>
 <style>
-:root{color-scheme:dark}*{box-sizing:border-box}html,body{height:100%;overflow:hidden}body{font:16px system-ui;background:#101b23;color:#edf3f7;margin:0;padding:14px}main{height:100%;max-width:1400px;margin:auto;display:flex;flex-direction:column;gap:12px}header{display:flex;align-items:center;justify-content:space-between;gap:12px;height:44px;flex-shrink:0}h1{margin:0;font-size:20px}h2{font-size:17px}.layout{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,.48fr);gap:16px}.panel{background:#192932;border:1px solid #2d414d;border-radius:16px;padding:12px;min-height:0}.play-panel{display:grid;grid-template-rows:22px minmax(0,1fr) 56px 42px;justify-items:center;gap:8px}.board{position:relative;flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center}#board{height:100%;width:100%;display:flex;justify-content:center;align-items:center}.board svg{display:block;width:100%;height:100%;max-height:100%;max-width:100%}#state{font-size:14px;color:#72dbc0;height:22px;white-space:nowrap}.controls{display:flex;gap:8px;flex-wrap:wrap}select,button{font:inherit;border:1px solid #3e5965;border-radius:10px;padding:8px 12px;background:#223945;color:#edf3f7}button{cursor:pointer}button:disabled{opacity:.4}button.primary{background:#7de1bd;color:#10231c;font-weight:650}button.icon{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:20px}button.icon svg{width:24px;height:24px}#voice[aria-pressed="true"]{background:#285a4b;border-color:#7de1bd;color:#a7f5d6}label{display:block;margin:12px 0}select{max-width:100%}small,.muted{color:#afc0c9;line-height:1.5}#camera-panel{display:flex;flex-direction:column;justify-content:center;height:100%;gap:12px}canvas{width:100%;min-height:0;max-height:75%;object-fit:contain;aspect-ratio:16/9;background:#0d151b;border-radius:9px}#board-notice{height:56px;width:100%;max-width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:8px 16px;border-radius:10px;background:#102b24;border:1px solid #53c9a5;color:#d5ffec;font-size:16px;text-align:center}#board-notice.error{background:#381c20;border-color:#ef6e6e;color:#ffd6d6}#board-notice[hidden]{display:flex!important;visibility:hidden}#board-notice.wait{background:#1b2b38;border-color:#7895ab;color:#e0edf6}[hidden]{display:none!important}#message,#fresh,#sides,#board-label,#control-note,#suggestions,#stats,#auto-side,#setup-note{display:none}dialog{width:min(540px,calc(100vw - 24px));max-height:85dvh;overflow:auto;background:#192932;color:#edf3f7;border:1px solid #3e5965;border-radius:16px;padding:20px}dialog::backdrop{background:#0009}dialog .panel{border:0;padding:0}dialog details{margin:16px 0}summary{cursor:pointer}#expected svg{width:100%;max-height:320px}#moves{line-height:1.8}#errors{font-size:14px;line-height:1.7}#error-details{max-width:100%;flex-shrink:0}#error-details[open]{max-height:120px;overflow:auto}#error-details summary{color:#ffb9b9;font-size:13px}@media(max-width:700px){body{padding:8px}.layout{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) 100px;gap:8px}#camera-panel{padding:4px;align-items:center}canvas{height:100%;width:auto;max-width:100%;max-height:100%}h1{font-size:17px}.panel{padding:8px}}
+:root{color-scheme:dark}*{box-sizing:border-box}html,body{height:100%;overflow:hidden}body{font:16px system-ui;background:#101b23;color:#edf3f7;margin:0;padding:14px}main{height:100%;max-width:1400px;margin:auto;display:flex;flex-direction:column;gap:12px}header{display:flex;align-items:center;justify-content:space-between;gap:12px;height:44px;flex-shrink:0}h1{margin:0;font-size:20px}h2{font-size:17px}.layout{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,.48fr);gap:16px}.panel{background:#192932;border:1px solid #2d414d;border-radius:16px;padding:12px;min-height:0}.play-panel{display:grid;grid-template-rows:22px minmax(0,1fr) 56px 42px;justify-items:center;gap:8px}.board{position:relative;flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center}#board{height:100%;width:100%;display:flex;justify-content:center;align-items:center}.board svg{display:block;width:100%;height:100%;max-height:100%;max-width:100%}#state{font-size:14px;color:#72dbc0;height:22px;white-space:nowrap}.controls{display:flex;gap:8px;flex-wrap:wrap}select,button{font:inherit;border:1px solid #3e5965;border-radius:10px;padding:8px 12px;background:#223945;color:#edf3f7}button{cursor:pointer}button:disabled{opacity:.4}button.primary{background:#7de1bd;color:#10231c;font-weight:650}button.icon{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:20px}button.icon svg{width:24px;height:24px}#voice[aria-pressed="true"]{background:#285a4b;border-color:#7de1bd;color:#a7f5d6}label{display:block;margin:12px 0}select{max-width:100%}small,.muted{color:#afc0c9;line-height:1.5}#camera-panel{display:flex;flex-direction:column;justify-content:center;height:100%;gap:12px}canvas{width:100%;min-height:0;max-height:75%;object-fit:contain;aspect-ratio:16/9;background:#0d151b;border-radius:9px}#board-notice{height:56px;width:100%;max-width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:8px 16px;border-radius:10px;background:#102b24;border:1px solid #53c9a5;color:#d5ffec;font-size:16px;text-align:center}#board-notice.error{background:#381c20;border-color:#ef6e6e;color:#ffd6d6}#board-notice[hidden]{display:flex!important;visibility:hidden}#board-notice.wait{background:#1b2b38;border-color:#7895ab;color:#e0edf6}[hidden]{display:none!important}#message,#fresh,#sides,#control-note,#suggestions,#stats,#auto-side,#setup-note{display:none}dialog{width:min(540px,calc(100vw - 24px));max-height:85dvh;overflow:auto;background:#192932;color:#edf3f7;border:1px solid #3e5965;border-radius:16px;padding:20px}dialog::backdrop{background:#0009}dialog .panel{border:0;padding:0}dialog details{margin:16px 0}summary{cursor:pointer}#expected svg{width:100%;max-height:320px}#moves{line-height:1.8}#errors{font-size:14px;line-height:1.7}#error-details{max-width:100%;flex-shrink:0}#error-details[open]{max-height:120px;overflow:auto}#error-details summary{color:#ffb9b9;font-size:13px}@media(max-width:700px){body{padding:8px}.layout{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) 100px;gap:8px}#camera-panel{padding:4px;align-items:center}canvas{height:100%;width:auto;max-width:100%;max-height:100%}h1{font-size:17px}.panel{padding:8px}}
 
-#board rect.square{cursor:pointer}#board use,#board polygon,#board line{pointer-events:none}
+.play-panel:has(#board-notice.warning){grid-template-rows:22px minmax(0,1fr) auto 42px}#board-notice.warning{height:auto;min-height:56px;max-height:180px;overflow:auto;background:#382d18;border-color:#e4b95c;color:#ffe3a9;font-size:14px;text-align:left}#state{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+#board rect.square{cursor:pointer}#board svg *{pointer-events:none}#board rect.square{pointer-events:all}
 .home{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px}.home h1{font-size:clamp(32px,7vw,56px)}.home .primary{min-width:180px;padding:14px 24px;font-size:19px}.home .muted{min-height:24px;margin:0;text-align:center}header{height:auto;min-height:44px;flex-wrap:wrap}header h1{font-size:18px}header .controls{justify-content:flex-end}#game-details #error-details{display:block}#game-details #error-details[hidden]{display:none!important}#game-details #error-details[open]{max-height:none}#game-details h2{margin:0}#voice-choice{width:100%}#settings label{margin:20px 0}#settings select{display:block;width:100%;margin-top:8px}#board-notice{font-size:15px;line-height:1.3}#settings{max-width:380px}@media(max-width:700px){header{gap:6px}header .controls{gap:6px}header button{padding:7px 9px}header button.icon{width:38px;height:38px}header h1{font-size:16px}}
-#correction{width:min(940px,calc(100vw - 24px))}.fix-layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(260px,1fr);gap:24px;align-items:start}#fix-board{aspect-ratio:1;width:100%}#fix-board>svg{width:100%;height:100%;display:block}#fix-board rect.square{cursor:pointer}#fix-board use,#fix-board polygon,#fix-board line{pointer-events:none}#fix-board rect.square.selected{stroke:#7de1bd!important;stroke-width:4;paint-order:stroke;filter:brightness(1.15)}.piece-options{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin:8px 0 18px}.piece-option{padding:4px;min-height:48px;background:#9aaeb6}.piece-option svg{display:block;width:100%;height:40px}.piece-option[aria-pressed="true"]{outline:3px solid #7de1bd;outline-offset:2px;background:#cee9df}#empty-piece{width:100%;margin-bottom:16px;background:#223945}.fix-group-label{display:block;margin-top:16px;color:#afc0c9;font-size:14px}#fix-selected{font-size:20px;margin-top:0}#confirm-correction{max-width:420px}@media(max-width:700px){.fix-layout{grid-template-columns:1fr;gap:16px}#fix-board{max-width:380px;margin:auto}#correction{padding:16px}.piece-options{margin-bottom:12px}}
+#correction{width:min(940px,calc(100vw - 24px))}.fix-layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(260px,1fr);gap:24px;align-items:start}#fix-board{aspect-ratio:1;width:100%}#fix-board>svg{width:100%;height:100%;display:block}#fix-board rect.square{cursor:pointer}#fix-board svg *{pointer-events:none}#fix-board rect.square{pointer-events:all}#fix-board rect.square.selected{stroke:#7de1bd!important;stroke-width:4;paint-order:stroke;filter:brightness(1.15)}.piece-options{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin:8px 0 18px}.piece-option{padding:4px;min-height:48px;background:#9aaeb6}.piece-option svg{display:block;width:100%;height:40px}.piece-option[aria-pressed="true"]{outline:3px solid #7de1bd;outline-offset:2px;background:#cee9df}#empty-piece{width:100%;margin-bottom:16px;background:#223945}.fix-group-label{display:block;margin-top:16px;color:#afc0c9;font-size:14px}#fix-selected{font-size:20px;margin-top:0}#confirm-correction{max-width:420px}@media(max-width:700px){.fix-layout{grid-template-columns:1fr;gap:16px}#fix-board{max-width:380px;margin:auto}#correction{padding:16px}.piece-options{margin-bottom:12px}}
 .home{gap:18px}.home-actions{display:grid;gap:10px;width:min(280px,90vw)}.home-actions button{padding:12px 16px}.home-actions .primary{font-size:18px}input{font:inherit;padding:10px;border:1px solid #3e5965;border-radius:8px;background:#101b23;color:#edf3f7;max-width:100%}#save-name{width:100%}#load-dialog{overflow:hidden}#load-dialog[open]{display:flex;flex-direction:column}.saved-list{display:grid;gap:10px;margin-top:16px;overflow-y:auto;min-height:0;max-height:55dvh;overscroll-behavior:contain}.saved-row{display:flex;gap:8px;align-items:center}.saved-row .saved-item{flex:1;min-width:0;overflow-wrap:anywhere}.delete-save{flex-shrink:0;width:44px;height:44px;padding:0;color:#ffb9b9}#delete-dialog{max-width:420px}#delete-name{overflow-wrap:anywhere}#delete-feedback{color:#ffb9b9}.saved-item{text-align:left;width:100%}.saved-item small{display:block;margin-top:4px}#position-preview{max-width:300px;aspect-ratio:1;margin:12px auto}#position-preview svg{width:100%;height:100%}.play-panel>.controls{flex-wrap:nowrap}.play-panel>.controls button{padding:7px 9px;font-size:14px}#endgame-setup label select{display:block;width:100%;margin-top:6px}#save-dialog{max-width:420px}#save-feedback,#load-feedback,#endgame-feedback{color:#ffb9b9;min-height:20px}.home-note{max-width:400px}#resume-game:disabled{cursor:default}
-</style></head><body><main>
+
+#camera-panel{overflow:auto;justify-content:safe center}#camera-panel canvas{flex-shrink:1}#promotion-card{width:100%;flex-shrink:0;background:#102b24;border:1px solid #53c9a5;border-radius:12px;padding:16px}#promotion-card h2{margin:0 0 6px;font-size:19px}#promotion-card p{margin:8px 0;font-size:14px;line-height:1.45}.promotion-pieces{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:14px 0}.promotion-pieces button{padding:8px 2px;font-size:12px}.promotion-pieces span{display:block;font-size:28px;line-height:1.3}.promotion-modes{display:grid;grid-template-columns:1fr 1fr;gap:8px}.promotion-modes button{font-size:13px;padding:10px 6px}#promotion-card button[aria-pressed="true"]{background:#315b4c;border-color:#a4f2ce;box-shadow:inset 0 0 0 1px #a4f2ce}#confirm-promotion{width:100%;margin-top:10px}#promotion-feedback{color:#ffb9b9}#proxy-status{width:100%;flex-shrink:0;padding:10px 12px;border:1px solid #aa8a4c;border-radius:10px;color:#ffe1a6;font-size:13px;line-height:1.5;white-space:pre-line}.promotion-active #camera{max-height:180px;min-height:64px}@media(max-width:700px){.layout.promotion-active{grid-template-rows:minmax(160px,1fr) minmax(0,1.2fr)}.promotion-active #camera-panel{display:block;overflow:auto;padding:8px}.promotion-active #camera{display:none}#promotion-card{padding:12px}#promotion-card h2{font-size:17px}.promotion-pieces{margin:8px 0}.promotion-pieces span{font-size:23px}#proxy-status{font-size:12px}.layout:not(.promotion-active) #camera-panel:has(#proxy-status:not([hidden])){flex-direction:row}.layout:not(.promotion-active) #proxy-status{width:55%;max-height:100%;overflow:auto}}
+#completed-preview{max-width:360px;margin:12px auto}#completed-preview svg{width:100%;height:auto}.piece-option small{display:block;font-size:10px;color:#10202a}#fix-feedback,#completed-feedback{min-height:22px;color:#ffd587}#fix-board rect.square.edited{stroke:#ffd587;stroke-width:3}#apply-fix{width:100%}.fix-footer{flex-shrink:0;background:#192932;padding:12px 0 2px;margin-top:8px;border-top:1px solid #3e5965}#correction[open]{display:flex;flex-direction:column;overflow:hidden;max-height:calc(100dvh - 24px)}#correction>div:first-child,#correction>p{flex-shrink:0}.fix-content{overflow:auto;min-height:0;padding:3px}#fix-changes{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px;margin:12px 0;max-height:110px;overflow:auto}#fix-changes button{text-align:left;font-size:13px;padding:8px 10px}#fix-camera{width:100%;border-radius:10px;margin-top:8px}#fix-summary{margin:4px 0 8px}#fix-reset{font-size:13px}#fix-live-status{color:#ffd587;min-height:20px}#fix-live-status:empty,#fix-feedback:empty{display:none}</style></head><body><svg width="0" height="0" aria-hidden="true" style="position:absolute"><defs><g id="palette-white-pawn" class="white pawn"><path d="M22.5 9c-2.21 0-4 1.79-4 4 0 .89.29 1.71.78 2.38C17.33 16.5 16 18.59 16 21c0 2.03.94 3.84 2.41 5.03-3 1.06-7.41 5.55-7.41 13.47h23c0-7.92-4.41-12.41-7.41-13.47 1.47-1.19 2.41-3 2.41-5.03 0-2.41-1.33-4.5-3.28-5.62.49-.67.78-1.49.78-2.38 0-2.21-1.79-4-4-4z" fill="#fff" stroke="#000" stroke-width="1.5" stroke-linecap="round" /></g><g id="palette-white-knight" class="white knight" fill="none" fill-rule="evenodd" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M 22,10 C 32.5,11 38.5,18 38,39 L 15,39 C 15,30 25,32.5 23,18" style="fill:#ffffff; stroke:#000000;" /><path d="M 24,18 C 24.38,20.91 18.45,25.37 16,27 C 13,29 13.18,31.34 11,31 C 9.958,30.06 12.41,27.96 11,28 C 10,28 11.19,29.23 10,30 C 9,30 5.997,31 6,26 C 6,24 12,14 12,14 C 12,14 13.89,12.1 14,10.5 C 13.27,9.506 13.5,8.5 13.5,7.5 C 14.5,6.5 16.5,10 16.5,10 L 18.5,10 C 18.5,10 19.28,8.008 21,7 C 22,7 22,10 22,10" style="fill:#ffffff; stroke:#000000;" /><path d="M 9.5 25.5 A 0.5 0.5 0 1 1 8.5,25.5 A 0.5 0.5 0 1 1 9.5 25.5 z" style="fill:#000000; stroke:#000000;" /><path d="M 15 15.5 A 0.5 1.5 0 1 1 14,15.5 A 0.5 1.5 0 1 1 15 15.5 z" transform="matrix(0.866,0.5,-0.5,0.866,9.693,-5.173)" style="fill:#000000; stroke:#000000;" /></g><g id="palette-white-bishop" class="white bishop" fill="none" fill-rule="evenodd" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><g fill="#fff" stroke-linecap="butt"><path d="M9 36c3.39-.97 10.11.43 13.5-2 3.39 2.43 10.11 1.03 13.5 2 0 0 1.65.54 3 2-.68.97-1.65.99-3 .5-3.39-.97-10.11.46-13.5-1-3.39 1.46-10.11.03-13.5 1-1.354.49-2.323.47-3-.5 1.354-1.94 3-2 3-2zM15 32c2.5 2.5 12.5 2.5 15 0 .5-1.5 0-2 0-2 0-2.5-2.5-4-2.5-4 5.5-1.5 6-11.5-5-15.5-11 4-10.5 14-5 15.5 0 0-2.5 1.5-2.5 4 0 0-.5.5 0 2zM25 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 1 1 5 0z" /></g><path d="M17.5 26h10M15 30h15m-7.5-14.5v5M20 18h5" stroke-linejoin="miter" /></g><g id="palette-white-rook" class="white rook" fill="#fff" fill-rule="evenodd" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 39h27v-3H9v3zM12 36v-4h21v4H12zM11 14V9h4v2h5V9h5v2h5V9h4v5" stroke-linecap="butt" /><path d="M34 14l-3 3H14l-3-3" /><path d="M31 17v12.5H14V17" stroke-linecap="butt" stroke-linejoin="miter" /><path d="M31 29.5l1.5 2.5h-20l1.5-2.5" /><path d="M11 14h23" fill="none" stroke-linejoin="miter" /></g><g id="palette-white-queen" class="white queen" fill="#fff" fill-rule="evenodd" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12a2 2 0 1 1-4 0 2 2 0 1 1 4 0zM24.5 7.5a2 2 0 1 1-4 0 2 2 0 1 1 4 0zM41 12a2 2 0 1 1-4 0 2 2 0 1 1 4 0zM16 8.5a2 2 0 1 1-4 0 2 2 0 1 1 4 0zM33 9a2 2 0 1 1-4 0 2 2 0 1 1 4 0z" /><path d="M9 26c8.5-1.5 21-1.5 27 0l2-12-7 11V11l-5.5 13.5-3-15-3 15-5.5-14V25L7 14l2 12zM9 26c0 2 1.5 2 2.5 4 1 1.5 1 1 .5 3.5-1.5 1-1.5 2.5-1.5 2.5-1.5 1.5.5 2.5.5 2.5 6.5 1 16.5 1 23 0 0 0 1.5-1 0-2.5 0 0 .5-1.5-1-2.5-.5-2.5-.5-2 .5-3.5 1-2 2.5-2 2.5-4-8.5-1.5-18.5-1.5-27 0z" stroke-linecap="butt" /><path d="M11.5 30c3.5-1 18.5-1 22 0M12 33.5c6-1 15-1 21 0" fill="none" /></g><g id="palette-white-king" class="white king" fill="none" fill-rule="evenodd" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22.5 11.63V6M20 8h5" stroke-linejoin="miter" /><path d="M22.5 25s4.5-7.5 3-10.5c0 0-1-2.5-3-2.5s-3 2.5-3 2.5c-1.5 3 3 10.5 3 10.5" fill="#fff" stroke-linecap="butt" stroke-linejoin="miter" /><path d="M11.5 37c5.5 3.5 15.5 3.5 21 0v-7s9-4.5 6-10.5c-4-6.5-13.5-3.5-16 4V27v-3.5c-3.5-7.5-13-10.5-16-4-3 6 5 10 5 10V37z" fill="#fff" /><path d="M11.5 30c5.5-3 15.5-3 21 0m-21 3.5c5.5-3 15.5-3 21 0m-21 3.5c5.5-3 15.5-3 21 0" /></g><g id="palette-black-pawn" class="black pawn"><path d="M22.5 9c-2.21 0-4 1.79-4 4 0 .89.29 1.71.78 2.38C17.33 16.5 16 18.59 16 21c0 2.03.94 3.84 2.41 5.03-3 1.06-7.41 5.55-7.41 13.47h23c0-7.92-4.41-12.41-7.41-13.47 1.47-1.19 2.41-3 2.41-5.03 0-2.41-1.33-4.5-3.28-5.62.49-.67.78-1.49.78-2.38 0-2.21-1.79-4-4-4z" fill="#000" stroke="#000" stroke-width="1.5" stroke-linecap="round" /></g><g id="palette-black-knight" class="black knight" fill="none" fill-rule="evenodd" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M 22,10 C 32.5,11 38.5,18 38,39 L 15,39 C 15,30 25,32.5 23,18" style="fill:#000000; stroke:#000000;" /><path d="M 24,18 C 24.38,20.91 18.45,25.37 16,27 C 13,29 13.18,31.34 11,31 C 9.958,30.06 12.41,27.96 11,28 C 10,28 11.19,29.23 10,30 C 9,30 5.997,31 6,26 C 6,24 12,14 12,14 C 12,14 13.89,12.1 14,10.5 C 13.27,9.506 13.5,8.5 13.5,7.5 C 14.5,6.5 16.5,10 16.5,10 L 18.5,10 C 18.5,10 19.28,8.008 21,7 C 22,7 22,10 22,10" style="fill:#000000; stroke:#000000;" /><path d="M 9.5 25.5 A 0.5 0.5 0 1 1 8.5,25.5 A 0.5 0.5 0 1 1 9.5 25.5 z" style="fill:#ececec; stroke:#ececec;" /><path d="M 15 15.5 A 0.5 1.5 0 1 1 14,15.5 A 0.5 1.5 0 1 1 15 15.5 z" transform="matrix(0.866,0.5,-0.5,0.866,9.693,-5.173)" style="fill:#ececec; stroke:#ececec;" /><path d="M 24.55,10.4 L 24.1,11.85 L 24.6,12 C 27.75,13 30.25,14.49 32.5,18.75 C 34.75,23.01 35.75,29.06 35.25,39 L 35.2,39.5 L 37.45,39.5 L 37.5,39 C 38,28.94 36.62,22.15 34.25,17.66 C 31.88,13.17 28.46,11.02 25.06,10.5 L 24.55,10.4 z " style="fill:#ececec; stroke:none;" /></g><g id="palette-black-bishop" class="black bishop" fill="none" fill-rule="evenodd" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 36c3.39-.97 10.11.43 13.5-2 3.39 2.43 10.11 1.03 13.5 2 0 0 1.65.54 3 2-.68.97-1.65.99-3 .5-3.39-.97-10.11.46-13.5-1-3.39 1.46-10.11.03-13.5 1-1.354.49-2.323.47-3-.5 1.354-1.94 3-2 3-2zm6-4c2.5 2.5 12.5 2.5 15 0 .5-1.5 0-2 0-2 0-2.5-2.5-4-2.5-4 5.5-1.5 6-11.5-5-15.5-11 4-10.5 14-5 15.5 0 0-2.5 1.5-2.5 4 0 0-.5.5 0 2zM25 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 1 1 5 0z" fill="#000" stroke-linecap="butt" /><path d="M17.5 26h10M15 30h15m-7.5-14.5v5M20 18h5" stroke="#fff" stroke-linejoin="miter" /></g><g id="palette-black-rook" class="black rook" fill="#000" fill-rule="evenodd" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 39h27v-3H9v3zM12.5 32l1.5-2.5h17l1.5 2.5h-20zM12 36v-4h21v4H12z" stroke-linecap="butt" /><path d="M14 29.5v-13h17v13H14z" stroke-linecap="butt" stroke-linejoin="miter" /><path d="M14 16.5L11 14h23l-3 2.5H14zM11 14V9h4v2h5V9h5v2h5V9h4v5H11z" stroke-linecap="butt" /><path d="M12 35.5h21M13 31.5h19M14 29.5h17M14 16.5h17M11 14h23" fill="none" stroke="#fff" stroke-width="1" stroke-linejoin="miter" /></g><g id="palette-black-queen" class="black queen" fill="#000" fill-rule="evenodd" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><g fill="#000" stroke="none"><circle cx="6" cy="12" r="2.75" /><circle cx="14" cy="9" r="2.75" /><circle cx="22.5" cy="8" r="2.75" /><circle cx="31" cy="9" r="2.75" /><circle cx="39" cy="12" r="2.75" /></g><path d="M9 26c8.5-1.5 21-1.5 27 0l2.5-12.5L31 25l-.3-14.1-5.2 13.6-3-14.5-3 14.5-5.2-13.6L14 25 6.5 13.5 9 26zM9 26c0 2 1.5 2 2.5 4 1 1.5 1 1 .5 3.5-1.5 1-1.5 2.5-1.5 2.5-1.5 1.5.5 2.5.5 2.5 6.5 1 16.5 1 23 0 0 0 1.5-1 0-2.5 0 0 .5-1.5-1-2.5-.5-2.5-.5-2 .5-3.5 1-2 2.5-2 2.5-4-8.5-1.5-18.5-1.5-27 0z" stroke-linecap="butt" /><path d="M11 38.5a35 35 1 0 0 23 0" fill="none" stroke-linecap="butt" /><path d="M11 29a35 35 1 0 1 23 0M12.5 31.5h20M11.5 34.5a35 35 1 0 0 22 0M10.5 37.5a35 35 1 0 0 24 0" fill="none" stroke="#fff" /></g><g id="palette-black-king" class="black king" fill="none" fill-rule="evenodd" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22.5 11.63V6" stroke-linejoin="miter" /><path d="M22.5 25s4.5-7.5 3-10.5c0 0-1-2.5-3-2.5s-3 2.5-3 2.5c-1.5 3 3 10.5 3 10.5" fill="#000" stroke-linecap="butt" stroke-linejoin="miter" /><path d="M11.5 37c5.5 3.5 15.5 3.5 21 0v-7s9-4.5 6-10.5c-4-6.5-13.5-3.5-16 4V27v-3.5c-3.5-7.5-13-10.5-16-4-3 6 5 10 5 10V37z" fill="#000" /><path d="M20 8h5" stroke-linejoin="miter" /><path d="M32 29.5s8.5-4 6.03-9.65C34.15 14 25 18 22.5 24.5l.01 2.1-.01-2.1C20 18 9.906 14 6.997 19.85c-2.497 5.65 4.853 9 4.853 9M11.5 30c5.5-3 15.5-3 21 0m-21 3.5c5.5-3 15.5-3 21 0m-21 3.5c5.5-3 15.5-3 21 0" stroke="#fff" /></g></defs></svg><main>
 <section id="home" class="home"><h1>Camera Chess</h1><div class="home-actions"><button id="start-game" class="primary">Start a New Game</button><button id="resume-game" disabled>Resume</button><button id="load-game">Load a Game</button><button id="endgame">Endgame</button></div><button id="home-settings">Settings</button><button id="quit-app">Quit Application</button><p id="home-note" class="muted" role="status"></p></section>
 <header id="game-header" hidden><h1>Camera Chess</h1><div class="controls"><button id="begin">Restart Game</button><button id="exit-game">Back to Home</button><button id="voice" class="icon" aria-label="Voice off — enable"></button><button id="repeat" class="icon" title="Repeat move" aria-label="Repeat move">↻</button><button id="menu" class="icon" title="Settings" aria-label="Settings">⚙</button></div></header>
-<div class="layout" id="game-view" hidden><section class="panel play-panel"><div id="state">Connecting…</div><div class="board"><div id="board"></div></div><div id="board-notice" role="status" aria-live="polite" hidden></div><div class="controls"><button id="save-now">Save</button><button id="confirm-position" hidden>Confirm position</button><button id="fix">Fix recognition</button><button id="info">Details</button><button id="draw" hidden>Claim draw</button></div></section><aside class="panel" id="camera-panel"><canvas id="camera" width="1920" height="1080" aria-label="Live camera"></canvas></aside></div>
-<dialog id="correction"><div style="display:flex;justify-content:space-between;align-items:center"><h2>Fix recognition</h2><button id="cancel-fix" aria-label="Close recognition correction">✕</button></div><p class="muted">Tap any square, then choose what is actually there. Red squares need checking.</p><div class="fix-layout"><div id="fix-board" aria-label="Recognition correction board"></div><section><h3 id="fix-selected">Choose a square</h3><p id="fix-seen" class="muted"></p><span class="fix-group-label">Black pieces</span><div id="black-pieces" class="piece-options" role="group" aria-label="Black pieces"></div><span class="fix-group-label">White pieces</span><div id="white-pieces" class="piece-options" role="group" aria-label="White pieces"></div><button id="empty-piece" class="piece-option" data-piece="." aria-pressed="false">∅ &nbsp; No piece / Empty square</button><p id="fix-choice" role="status"></p><p class="muted">This is a temporary camera correction. It clears when the reading changes.</p><p id="fix-feedback" role="status"></p><button id="apply-fix" class="primary">Fix this square</button></section></div><select id="fix-square" hidden aria-hidden="true"></select><select id="fix-piece" hidden aria-hidden="true"></select></dialog><dialog id="confirm-correction"><h2>Confirm correction?</h2><p id="confirm-fix-description"></p><p class="muted">Use this piece for the current camera reading?</p><div class="controls"><button id="confirm-fix" class="primary">Confirm</button><button id="back-fix">Back</button></div></dialog><dialog id="settings"><div style="display:flex;justify-content:space-between;align-items:center"><h2>Settings</h2><button id="close-settings" aria-label="Close settings">✕</button></div><label>Difficulty<select id="difficulty"><option value="easy">Easy</option><option value="normal" selected>Normal</option><option value="advanced">Advanced</option><option value="hard">Hard</option></select></label><label>Voice<select id="voice-choice" aria-label="Voice"><option value="">Natural voice</option></select></label></dialog>
-<dialog id="game-details"><div style="display:flex;justify-content:space-between;align-items:center"><h2>Board details</h2><button id="close-details" aria-label="Close details">✕</button></div><details id="error-details" hidden open><summary>Check the red squares</summary><div id="errors"></div></details><p id="fix-status" role="status"></p><button id="clear-fixes" hidden>Clear corrections</button><p class="muted">Compare the camera view with your board. Tap a square to correct its recognition.</p></dialog><dialog id="save-dialog"><h2 id="save-title">Save current position?</h2><p class="muted">Saves the last confirmed position.</p><label>Name<input id="save-name" maxlength="80" placeholder="Saved game"></label><p id="save-feedback" role="status"></p><div class="controls"><button id="save-yes" class="primary">Save</button><button id="save-no">Don’t Save</button><button id="save-cancel">Cancel</button></div></dialog>
+<div class="layout" id="game-view" hidden><section class="panel play-panel"><div id="state">Connecting…</div><div class="board"><div id="board"></div></div><div id="board-notice" role="status" aria-live="polite" hidden></div><div class="controls"><button id="save-now">Save</button><button id="confirm-position" hidden>Confirm position</button><button id="fix">Fix recognition</button><button id="info">Details</button><button id="draw" hidden>Claim draw</button></div></section><aside class="panel" id="camera-panel"><section id="promotion-card" hidden aria-labelledby="promotion-title"><h2 id="promotion-title">Promote your pawn</h2><p id="promotion-route" class="muted"></p><div id="promotion-pieces" class="promotion-pieces" role="group" aria-label="Promote to"><button id="promote-q" aria-pressed="true"><span aria-hidden="true">♕</span>Queen</button><button id="promote-r" aria-pressed="false"><span aria-hidden="true">♖</span>Rook</button><button id="promote-b" aria-pressed="false"><span aria-hidden="true">♗</span>Bishop</button><button id="promote-n" aria-pressed="false"><span aria-hidden="true">♘</span>Knight</button></div><div class="promotion-modes" role="group" aria-label="Physical piece"><button id="promotion-pawn" aria-pressed="true">Keep pawn</button><button id="promotion-piece" aria-pressed="false">Replace piece</button></div><p id="promotion-help"></p><p id="promotion-ready" role="status" aria-live="polite"></p><button id="confirm-promotion" class="primary" disabled>Confirm promotion</button><p id="promotion-feedback" role="alert" hidden></p><p id="promotion-cancel" class="muted"></p></section><canvas id="camera" width="1920" height="1080" aria-label="Live camera"></canvas><div id="proxy-status" hidden aria-live="polite"></div></aside></div>
+<dialog id="correction"><div style="display:flex;justify-content:space-between;align-items:center"><h2>Fix recognition</h2><button id="cancel-fix" aria-label="Close recognition correction">✕</button></div><p class="muted">This is a frozen camera reading. Tap a square and choose the actual piece. Edit several squares, then apply once.</p><div class="fix-content"><div class="fix-layout"><div><div id="fix-board" aria-label="Recognition correction board"></div><details><summary>Compare with camera snapshot</summary><img id="fix-camera" alt="Camera frame used for this recognition" hidden><p id="fix-camera-note" class="muted"></p></details></div><section><h3 id="fix-selected">Choose a square</h3><p id="fix-seen" class="muted"></p><span class="fix-group-label">Black pieces</span><div id="black-pieces" class="piece-options" role="group" aria-label="Black pieces"></div><span class="fix-group-label">White pieces</span><div id="white-pieces" class="piece-options" role="group" aria-label="White pieces"></div><button id="empty-piece" class="piece-option" data-piece="." aria-pressed="false">∅ &nbsp; No piece / Empty square</button><p id="fix-choice" role="status"></p><p class="muted">Your choices stay selected while the camera updates. Applying corrections does not move a physical piece.</p><p id="fix-live-status" role="status"></p><p id="fix-feedback" role="status"></p><div id="fix-changes" aria-label="Pending corrections"></div><button id="fix-reset" disabled>Undo all changes</button><button id="refresh-fix">Discard edits and reload reading</button><p class="muted">The original recognition frame and your before/after corrections are saved locally.</p></section></div></div><div class="fix-footer"><p id="fix-summary" role="status">No changes yet</p><button id="apply-fix" class="primary" disabled>Apply corrections</button></div><select id="fix-square" hidden aria-hidden="true"></select><select id="fix-piece" hidden aria-hidden="true"></select></dialog><dialog id="settings"><div style="display:flex;justify-content:space-between;align-items:center"><h2>Settings</h2><button id="close-settings" aria-label="Close settings">✕</button></div><label>Difficulty<select id="difficulty"><option value="easy">Easy</option><option value="normal" selected>Normal</option><option value="advanced">Advanced</option><option value="hard">Hard</option></select></label><label>Voice<select id="voice-choice" aria-label="Voice"><option value="">Natural voice</option></select></label></dialog>
+<dialog id="game-details"><div style="display:flex;justify-content:space-between;align-items:center"><h2>Board details</h2><button id="close-details" aria-label="Close details">✕</button></div><details id="error-details" hidden open><summary>Check the red squares</summary><div id="errors"></div></details><p id="fix-status" role="status"></p><p><a id="fix-record" hidden target="_blank" rel="noopener">View last correction record</a></p><button id="retry-fix-record" hidden>Retry saving correction record</button><p id="fix-record-feedback" role="status"></p><button id="clear-fixes" hidden>Clear corrections</button><p class="muted">Compare the camera view with your board. Tap a square to correct its recognition.</p></dialog><dialog id="save-dialog"><h2 id="save-title">Save current position?</h2><p class="muted">Saves the last confirmed position.</p><label>Name<input id="save-name" maxlength="80" placeholder="Saved game"></label><p id="save-feedback" role="status"></p><div class="controls"><button id="save-yes" class="primary">Save</button><button id="save-no">Don’t Save</button><button id="save-cancel">Cancel</button></div></dialog>
 <dialog id="load-dialog"><div style="display:flex;justify-content:space-between;align-items:center"><h2>Load a Game</h2><button id="close-load" aria-label="Close saved games">✕</button></div><div id="saved-list" class="saved-list"></div><p id="load-feedback" role="status"></p></dialog>
 <dialog id="delete-dialog" aria-labelledby="delete-title"><h2 id="delete-title">Delete saved game?</h2><p id="delete-name"></p><p class="muted">This saved game will be permanently deleted.</p><p id="delete-feedback" role="status"></p><div class="controls"><button id="confirm-delete">Confirm delete</button><button id="cancel-delete" autofocus>Cancel</button></div></dialog>
+<dialog id="choose-player"><h2>Which side do you play?</h2><label>You play<select id="chosen-player"><option value="">Choose a side</option><option value="white">White</option><option value="black">Black</option></select></label><p id="choose-player-note"></p><div class="controls"><button id="confirm-player" disabled>Continue</button><button id="cancel-player">Cancel</button></div></dialog>
 <dialog id="endgame-setup"><h2>Confirm this position</h2><div id="position-preview"></div><label>You play<select id="endgame-player"><option value="white">White</option><option value="black">Black</option></select></label><label>Next to move<select id="endgame-turn"><option value="white">White</option><option value="black">Black</option></select></label><small>No castling or en passant in this mode.</small><p id="endgame-feedback" role="status"></p><div class="controls"><button id="start-position" class="primary">Play this position</button><button id="cancel-position">Back</button></div></dialog>
 </main>
 <dialog id="orientation-confirm" aria-labelledby="flip-title"><h2 id="flip-title">Board flipped</h2><p>Turn the board back to its original direction, or click Restart Game.</p><p class="muted">Play will resume automatically when the board is back.</p><button id="flip-restart" class="primary">Restart Game</button></dialog>
@@ -24,10 +28,36 @@ const $=s=>document.querySelector(s);
 let lastSpoken='',playing=false,flowBusy=false,errorReminderAt=0,transitionPending=null,libraryBusy=false,positionPlacement=null,libraryPromise=null;
 let busy=false,actionBusy=false,seq=null,cameraBusy=false,session=null,eventId=-1,current=null,voice=false,audio=null,svg=null,rawFen=null;
 const voiceOwner=Date.now()+'-'+Math.random();
+const activeTones=new Set();
+let lastCueAt=-Infinity,viewRevision=0,correctionNotice=null;
+const announcedInstructions=new Set();
+const retiredSessions=new Set();
+let playbackClosed=false;
+let activeSpeech=null,queuedSpeech=null,speechNotBefore=0;
+function stopTones(){for(const node of activeTones){try{node.stop();node.disconnect()}catch(e){}}activeTones.clear()}
+function playbackAllowed(){return !playbackClosed&&playing&&!document.hidden&&!flowBusy&&!transitionPending&&voice&&ownsVoice()&&!$('#correction').open}
 function ownsVoice(){try{return localStorage.getItem('chess-voice-owner')===voiceOwner}catch(e){return true}}
-function cancelSpeech(){if('speechSynthesis' in window)speechSynthesis.cancel()}
+function releaseSpeech(item){
+  if(activeSpeech===item)activeSpeech=null;
+  if(item?.release){item.release();item.release=null}
+}
+function settleCanceledSpeech(){
+  if(activeSpeech?.canceled&&Date.now()>=speechNotBefore&&!window.speechSynthesis?.speaking&&!window.speechSynthesis?.pending)releaseSpeech(activeSpeech);
+  else if(playbackClosed&&activeSpeech?.canceled)setTimeout(settleCanceledSpeech,100);
+}
+function cancelSpeech(){
+  queuedSpeech=null;
+  if(activeSpeech?.waiting){activeSpeech.canceled=true;releaseSpeech(activeSpeech);return}
+  if(!('speechSynthesis' in window))return;
+  if(activeSpeech?.canceled)return;
+  if(activeSpeech||speechSynthesis.speaking||speechSynthesis.pending){
+    if(activeSpeech)activeSpeech.canceled=true;
+    speechNotBefore=Math.max(speechNotBefore,Date.now()+250);
+    speechSynthesis.cancel();
+  }
+}
 function mutePlayback(){
-  voice=false;muted=true;cancelSpeech();clearTimeout(turnTimer);turnTimer=null;voiceButton();
+  voice=false;muted=true;cancelSpeech();stopTones();clearTimeout(turnTimer);turnTimer=null;voiceButton();
   if(audio&&audio.state==='running')audio.suspend().catch(()=>{});
 }
 function note(t){if(playing){if(t)boardNotice(t,'wait')}else $('#home-note').textContent=t}
@@ -42,78 +72,137 @@ function refreshVoices(){
 if('speechSynthesis' in window){speechSynthesis.addEventListener('voiceschanged',refreshVoices);refreshVoices()}
 function shortInstruction(g){
   if(g.orientation_status==='mismatch')return g.orientation_detail;
+  if(g.move_warning)return g.message;
+  if(g.promotion&&!g.pending)return 'Promotion on '+g.promotion.route.slice(2).toUpperCase()+'. Choose a piece and confirm on screen.';
 
   if(g.errors.length&&!g.message.startsWith('Move in progress'))return 'Check the red squares.';
   if(g.strict_recovery)return 'Match the saved board. Ghost = place; × = remove.';
-  if(g.state==='endgame_scan')return g.message.includes('kings')?'Both kings must be visible.':'Clear hands to scan your position.';
-  if(g.state==='endgame_ready')return 'Check the position, then confirm.';
-  if(g.pending){const move=g.message.match(/(?:White|Black) (?:pawn|knight|bishop|rook|queen|king), [a-h][1-8] to [a-h][1-8]\..*/i);return move?move[0]:g.pending.slice(0,2).toUpperCase()+' to '+g.pending.slice(2,4).toUpperCase();}
+  if(['endgame_scan','endgame_ready'].includes(g.state))return 'Check the recognized pieces. Use Fix recognition for mistakes.';
+  if(g.pending){if(g.move_instruction)return g.move_instruction;const move=g.message.match(/(?:White|Black) (?:pawn|knight|bishop|rook|queen|king), [a-h][1-8] to [a-h][1-8]\..*/i);return move?move[0]:g.pending.slice(0,2).toUpperCase()+' to '+g.pending.slice(2,4).toUpperCase();}
   if(g.needs_orientation)return 'Face one side toward the camera.';
   if(g.message.startsWith('Move in progress'))return 'Finish your move.';
-  return ({player_turn:g.message.includes('Check.')?'Check. Your turn.':'Your turn.',thinking:'Thinking…',paused:'Paused',setup:'Set up the board.',reconcile:'Check the board.',restore:'Restore the marked squares.',finished:g.message.split('. ')[0]})[g.state]||'Waiting…';
+  return ({player_turn:(g.in_check??g.message.includes('Check.'))?'Check. Your turn.':'Your turn.',thinking:'Thinking…',paused:'Paused',setup:'Set up the board.',reconcile:'Check the board.',restore:'Restore the marked squares.',finished:g.message.split('. ')[0]})[g.state]||'Waiting…';
 }
 function boardNotice(text,kind='action'){
   const el=$('#board-notice');el.textContent=text;el.className=kind;el.hidden=!text;
 }
-function speak(t){
-  if(!playing||flowBusy||transitionPending||!voice||!ownsVoice())return;
+function instructionKey(t){
+  // Camera messages may change without a new move or a new turn.
+  const purpose=current?.move_warning?['warning',current.move_warning.uci]:current?.pending?['move',current.pending]:current?.promotion?['promotion',current.promotion.id]:current?.state==='player_turn'?['turn']:current?.state==='finished'?['finished']:['message',t];
+  return JSON.stringify([current?.session,current?.fen,current?.history?.length,purpose]);
+}
+function speak(t,force=false){
+  if(!playbackAllowed())return;
   if(!('speechSynthesis' in window)||!('SpeechSynthesisUtterance' in window)){note('Speech is unavailable. Follow the text and arrows.');return}
+  const key=instructionKey(t);
+  if((activeSpeech?.key===key&&!activeSpeech.canceled)||queuedSpeech?.key===key)return;
+  if(!force&&announcedInstructions.has(key))return;
+  queuedSpeech={key,text:t};
+  pumpSpeech();
+}
+function pumpSpeech(){
+  // cancel() is asynchronous on native engines. Never cancel and speak together.
+  settleCanceledSpeech();
+  if(!queuedSpeech||activeSpeech||Date.now()<speechNotBefore||!playbackAllowed()||speechSynthesis.speaking||speechSynthesis.pending)return;
+  const item=queuedSpeech;
+  const latest=currentSpeech();
+  if(!latest||item.key!==latest.key){queuedSpeech=null;return}
+  activeSpeech=item;item.waiting=true;
+  // Ownership notifications alone cannot stop another tab's voice synchronously.
+  const locks=window.navigator?.locks;
+  if(locks){
+    locks.request('camera-chess-speech',{ifAvailable:true},lock=>{
+      if(!lock){releaseSpeech(item);return}
+      return new Promise(release=>{item.release=release;startSpeech(item)});
+    }).catch(()=>{releaseSpeech(item);if(queuedSpeech===item)queuedSpeech=null;if(!playbackClosed&&!item.canceled)note('Speech could not start. Try Repeat instruction.')});
+  }else startSpeech(item);
+}
+function startSpeech(item){
+  const latest=currentSpeech();
+  if(activeSpeech!==item||item.canceled||queuedSpeech!==item||!playbackAllowed()||!latest||item.key!==latest.key){releaseSpeech(item);return}
+  queuedSpeech=null;item.waiting=false;
+  item.text=latest.text;
   try{
-    cancelSpeech();
-    const u=new SpeechSynthesisUtterance(t.replace(/\b([a-h])([1-8])\b/gi,'$1 $2'));
-    u.rate=1;u.pitch=1;
+    stopTones();announcedInstructions.add(item.key);
+    const u=new SpeechSynthesisUtterance(item.text.replace(/\b([a-h])([1-8])\b/gi,'$1 $2'));
+    item.utterance=u;u.rate=1;u.pitch=1;
     const vs=normalVoices();
     u.voice=vs.find(v=>v.voiceURI===$('#voice-choice').value)||['Samantha','Google US English','Karen','Daniel','Moira'].map(name=>vs.find(v=>v.name===name)).find(Boolean)||vs[0]||null;
     u.lang=u.voice?.lang||'en-US';
-    u.onerror=e=>{if(!['canceled','interrupted'].includes(e.error))note('Speech failed. Follow the text and arrows, or try Repeat instruction.')};
+    const finished=()=>{const currentItem=activeSpeech===item;releaseSpeech(item);if(currentItem)speechNotBefore=Math.max(speechNotBefore,Date.now()+250);return currentItem};
+    u.onstart=()=>logUI('speech_started',item.text);
+    u.onend=()=>{logUI('speech_finished',item.text);finished()};
+    u.onerror=e=>{logUI('speech_error',e.error);if(finished()&&!playbackClosed&&!item.canceled&&!['canceled','interrupted'].includes(e.error))note('Speech failed. Follow the text and arrows, or try Repeat instruction.')};
     speechSynthesis.speak(u);
-  }catch(e){note('Speech failed. Follow the text and arrows.')}
+  }catch(e){releaseSpeech(item);note('Speech failed. Follow the text and arrows.')}
 }
 function tone(frequency,start,duration){
-  if(!playing||flowBusy||transitionPending||!voice||!ownsVoice()||!audio||audio.state!=='running')return;
+  if(!playbackAllowed()||!audio||audio.state!=='running')return;
   const o=audio.createOscillator(),gain=audio.createGain(),t=audio.currentTime+start;
-  o.type='sine';o.frequency.value=frequency;gain.gain.setValueAtTime(.0001,t);gain.gain.exponentialRampToValueAtTime(.18,t+.01);gain.gain.exponentialRampToValueAtTime(.0001,t+duration);o.connect(gain).connect(audio.destination);o.start(t);o.stop(t+duration+.02);
+  activeTones.add(o);o.onended=()=>{activeTones.delete(o);o.disconnect();gain.disconnect()};
+  o.type='sine';o.frequency.value=frequency;gain.gain.setValueAtTime(.0001,t);gain.gain.exponentialRampToValueAtTime(.10,t+.02);gain.gain.exponentialRampToValueAtTime(.0001,t+duration);o.connect(gain).connect(audio.destination);o.start(t);o.stop(t+duration+.02);
 }
-function ding(){tone(1320,0,.35);tone(1760,.04,.45)}
-function errorBeep(){cancelSpeech();tone(880,0,.12);tone(880,.18,.12);errorReminderAt=Date.now()+3000}
-let muted=false,lastError='',reminderAt=0,turnTimer=null;
+function playCue(frequency,duration){
+  if(!playbackAllowed()||Date.now()-lastCueAt<700)return;
+  if(activeSpeech||queuedSpeech||window.speechSynthesis?.speaking||window.speechSynthesis?.pending)return;
+  stopTones();lastCueAt=Date.now();speechNotBefore=Math.max(speechNotBefore,Date.now()+duration*1000+150);tone(frequency,0,duration);
+}
+function ding(){playCue(1320,.3)}
+function errorBeep(){playCue(880,.16);errorReminderAt=Date.now()+5000}
+let muted=false,lastError='',errorAlertPosition=null,reminderAt=0,turnTimer=null;
 function voiceButton(){
   const b=$('#voice');
   b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/>'+(voice?'<path d="M15 8a6 6 0 0 1 0 8M18 5a10 10 0 0 1 0 14"/>':'<path d="m16 9 5 6m0-6-5 6"/>')+'</svg>';
   b.title=b.ariaLabel=voice?'Voice on — mute':'Voice off — enable';b.setAttribute('aria-pressed',String(voice));
 }
 
-function sayCurrent(){if(playing&&!flowBusy&&!transitionPending&&current?.fresh&&!current.errors.length)speak(shortInstruction(current))}
+function currentSpeech(){
+  // A known game instruction does not depend on per-frame camera confidence.
+  // In particular, settling must not cancel a phrase already being spoken.
+  if(!current?.fresh||current.camera_phase==='orienting'||current.pending_arrived||current.state==='paused'||current.strict_recovery||current.orientation_status==='mismatch'||current.message.startsWith('Move in progress'))return null;
+  if(current.errors.length&&!current.move_warning)return null;
+  if(!current.move_warning&&!current.promotion&&!current.pending&&!['player_turn','finished'].includes(current.state))return null;
+  const text=shortInstruction({...current,recognition_failed:false});
+  return {key:instructionKey(text),text};
+}
+function sayCurrent(force=false){
+  const instruction=currentSpeech();
+  if(instruction)speak(instruction.text,force);
+}
 function remind(){
-  if(!playing||flowBusy||transitionPending||!voice||!ownsVoice()||!current?.fresh||current.state==='paused'||current.message.startsWith('Move in progress'))return;
-  if(current.errors.length){if(Date.now()>=errorReminderAt)errorBeep();return}
-  if(current.strict_recovery||!current.pending||Date.now()<reminderAt||window.speechSynthesis?.speaking)return;
-  sayCurrent();reminderAt=Date.now()+3000;
+  // Dispatch once per instruction. Waiting, polling and recognition recovery never replay it.
+  sayCurrent();pumpSpeech();
 }
 const reminderTimer=setInterval(remind,250);
-function enable(){
-  clearTimeout(turnTimer);turnTimer=null;cancelSpeech();
+function enable(feedback=true){
+  if(document.hidden||playbackClosed)return;
   const newlyEnabled=!voice;voice=true;try{localStorage.setItem('chess-voice-owner',voiceOwner)}catch(e){}
-  try{if(!audio){const A=window.AudioContext||window.webkitAudioContext;if(A)audio=new A()}if(audio)audio.resume().then(()=>{if(newlyEnabled&&voice&&ownsVoice())ding()}).catch(()=>note('Sound is blocked. Tap the speaker to retry.'))}catch(e){note('Sound is unavailable. Text and arrows remain active.')}
+  try{if(!audio){const A=window.AudioContext||window.webkitAudioContext;if(A)audio=new A()}if(audio){const context=audio,revision=viewRevision;context.resume().then(()=>{if(context===audio&&revision===viewRevision&&feedback&&newlyEnabled&&playbackAllowed()&&!activeSpeech&&!queuedSpeech&&!window.speechSynthesis?.speaking)ding()}).catch(()=>{if(context===audio&&revision===viewRevision&&!playbackClosed)note('Sound is blocked. Tap the speaker to retry.')})}}catch(e){note('Sound is unavailable. Text and arrows remain active.')}
   voiceButton();
 }
 voiceButton();
 $('#voice').onclick=()=>{if(voice){mutePlayback();try{localStorage.removeItem('chess-voice-owner')}catch(e){}}else{muted=false;enable();sayCurrent();reminderAt=Date.now()+3000}};
-$('#repeat').onclick=()=>{muted=false;enable();sayCurrent();reminderAt=Date.now()+3000};
-document.addEventListener('pointerdown',e=>{if(playing&&!transitionPending&&!voice&&!muted&&!e.target.closest('#voice')&&!e.target.closest('#exit-game')){enable();sayCurrent();reminderAt=Date.now()+3000}}, {capture:true});
+$('#repeat').onclick=()=>{muted=false;enable(false);sayCurrent(true);reminderAt=Date.now()+5000};
 $('#menu').onclick=$('#home-settings').onclick=()=>$('#settings').showModal();$('#close-settings').onclick=()=>$('#settings').close();
 $('#info').onclick=()=>$('#game-details').showModal();$('#close-details').onclick=()=>$('#game-details').close();
-function frame(n){if(cameraBusy||n===seq||n===undefined)return;cameraBusy=true;let i=new Image();i.onload=()=>{if(!playing){cameraBusy=false;return}const c=$('#camera');c.width=i.naturalWidth;c.height=i.naturalHeight;c.getContext('2d').drawImage(i,0,0);seq=n;cameraBusy=false};i.onerror=()=>cameraBusy=false;i.src='live.jpg?v='+n}
+function frame(n){if(cameraBusy||n===seq||n===undefined)return;cameraBusy=true;let i=new Image();i.onload=()=>{if(!playing){cameraBusy=false;return}const c=$('#camera');c.width=i.naturalWidth;c.height=i.naturalHeight;c.getContext('2d').drawImage(i,0,0);seq=n;cameraBusy=false};i.onerror=()=>{cameraBusy=false;logUI('camera_image_error','Live preview failed to load')};i.src='live.jpg?v='+n}
 function show(g){
-  if(!playing)return;
+  if(!playing||playbackClosed||retiredSessions.has(g.session))return;
+  if(session===g.session&&g.event_id<eventId)return;
   if(session===null){$('#difficulty').value=g.difficulty}
   current=g;
+  if(session!==g.session){$('#fix-record').hidden=true;$('#retry-fix-record').hidden=true;$('#fix-record-feedback').textContent='';lastCorrectionRequest=null}
+  if(g.correction_id){$('#fix-record').href='/api/correction-review/'+g.correction_id;$('#fix-record').hidden=g.evidence_report===false;$('#retry-fix-record').hidden=g.evidence_report!==false||!lastCorrectionRequest;$('#fix-record-feedback').textContent=g.evidence_warning||''}
+  if($('#correction').open&&fixSnapshot){$('#fix-live-status').textContent=g.session!==fixSnapshot.session||g.position_token!==fixSnapshot.position_token?'The turn changed. Close and reopen to review the new board.':!g.fresh?'Camera disconnected. Your edits are kept; reconnect before Apply.':''}
+  renderPromotion(g);
   const orientationDialog=$('#orientation-confirm');
   if(g.orientation_status==='mismatch'){if(!orientationDialog.open&&!transitionPending&&!flowBusy)orientationDialog.showModal()}else if(orientationDialog.open)orientationDialog.close();
-  if($('#correction').open)renderFixBoard();
+  // Keep correction targets stationary while the user is clicking them.
+  // A new reading is checked when selecting/submitting a square.
   if(voice&&!ownsVoice())mutePlayback();
-  $('#state').textContent=g.orientation_status==='mismatch'?'Board flipped':g.camera_phase==='orienting'?'Checking board direction':({player_turn:'Your turn',computer_move:'Computer move',restore:'Checking move',reconcile:'Checking board',setup:'Checking starting position',endgame_scan:'Scanning position',endgame_ready:'Position ready',thinking:'Thinking…'}[g.state]||g.state.replaceAll('_',' '));
-  const cameraNotice=!g.fresh?(['loading','waiting'].includes(g.camera_phase)?'Starting camera…':'Camera unavailable. Wait.'):['uncertain','unreadable'].includes(g.camera_phase)?'Clear hands; check camera view.':g.camera_phase==='settling'?'Board settling. Wait.':g.camera_phase==='orienting'?'Checking board direction.':'';
+  $('#state').textContent=g.orientation_status==='mismatch'?'Board flipped':g.camera_phase==='orienting'?'Checking board direction':g.move_warning?'Move recognized — king would be in check':g.promotion?'Confirm promotion':({player_turn:'Your turn',computer_move:'Computer move',restore:'Checking move',reconcile:'Checking board',setup:'Checking starting position',endgame_scan:'Scanning position',endgame_ready:'Position ready',thinking:'Thinking…'}[g.state]||g.state.replaceAll('_',' '));
+  // Frame confidence stays in Details; it must not replace the current action.
+  const cameraNotice=!g.fresh?(['loading','waiting'].includes(g.camera_phase)?'Starting camera…':'Camera unavailable. Wait.'):g.camera_phase==='orienting'?'Checking board direction.':'';
   const inProgress=g.message.startsWith('Move in progress');
   const error=g.errors.length&&!inProgress;
   let text=shortInstruction(g);
@@ -121,62 +210,107 @@ function show(g){
   if(!error)$('#error-details').open=false;
   if(cameraNotice)text=cameraNotice;
   if(g.orientation_status==='mismatch')text=g.orientation_detail;
+  if(correctionNotice&&Date.now()<correctionNotice.until&&g.fresh&&g.orientation_status!=='mismatch')text=correctionNotice.text;
   if(g.save_error)text+=' '+g.save_error;
-  boardNotice(text,g.orientation_status==='mismatch'?'error':cameraNotice?'wait':error?'error':['thinking','paused'].includes(g.state)?'wait':'action');
+  boardNotice(text,g.orientation_status==='mismatch'?'error':cameraNotice?'wait':g.move_warning?'warning':error?'error':['thinking','paused'].includes(g.state)?'wait':'action');
   if(svg!==g.board_svg){$('#board').innerHTML=g.board_svg.replaceAll('#ffbb55','#53c9a5').replaceAll('#15781B','#53c9a5');svg=g.board_svg;for(const square of $('#board').querySelectorAll('rect.square')){const name=[...square.classList].find(c=>/^[a-h][1-8]$/.test(c));square.setAttribute('tabindex','0');square.setAttribute('role','button');square.setAttribute('aria-label','Correct recognition on '+name.toUpperCase())}}
   const fixes=Object.keys(g.manual_corrections||{});
   $('#fix-status').textContent=fixes.length?'Manually corrected: '+fixes.map(n=>n.toUpperCase()).join(', '):'';
   $('#clear-fixes').hidden=!fixes.length;
   $('#fix').disabled=actionBusy||!g.fresh||!g.raw_placement;
-  $('#errors').replaceChildren(...g.errors.map(t=>{let p=document.createElement('div');const parts=t.match(/^([a-h][1-8]): detected (.*); expected (.*)$/i);p.textContent=parts?parts[1].toUpperCase()+': '+(parts[3]==='empty'?'Clear this square':'Place '+parts[3].toLowerCase()) :t;return p}));
+  $('#errors').replaceChildren(...g.errors.map(t=>{let p=document.createElement('div');const parts=t.match(/^([a-h][1-8]): detected (.*); expected (.*)$/i);p.textContent=parts?parts[1].toUpperCase()+': camera '+parts[2]+'; expected '+parts[3]+(g.move_warning?'. Restore this square to take back the move.':'. Correct recognition if the physical board is right.'):t;return p}));
   $('#save-now').hidden=['setup','endgame_scan','endgame_ready'].includes(g.state);$('#save-now').disabled=!g.can_save||actionBusy;
   $('#confirm-position').hidden=!['endgame_scan','endgame_ready'].includes(g.state);$('#confirm-position').disabled=g.state!=='endgame_ready'||!g.fresh||!g.side_known||g.camera_phase!=='stable';
   $('#draw').hidden=!g.can_claim_draw;$('#draw').disabled=actionBusy;$('#begin').disabled=actionBusy||flowBusy;
-  if(session!==g.session){lastSpoken='';const first=session===null;session=g.session;eventId=first?g.event_id:-1;seq=null}
-  const errorKey=error?g.errors.join('|'):'';
-  if(errorKey&&errorKey!==lastError&&g.fresh&&(!lastError||Date.now()>=errorReminderAt)){clearTimeout(turnTimer);errorBeep()}
-  lastError=errorKey;
-  if(g.event_id!==eventId){
-    const recent=g.events.filter(e=>e.id>eventId);eventId=g.event_id;
-    clearTimeout(turnTimer);cancelSpeech();reminderAt=Date.now()+3000;
-    if(g.fresh&&!error){
-      const correct=recent.some(e=>e.kind==='correct');
-      if(correct)ding();
-      const spoken=shortInstruction(g);
-      if(correct||spoken!==lastSpoken){
-        if(correct)turnTimer=setTimeout(()=>{if(playing&&!flowBusy&&!transitionPending&&current?.fresh&&!current.errors.length)speak(shortInstruction(current))},500);
-        else if(g.pending||g.state==='player_turn'||g.state==='finished')speak(spoken);
-        lastSpoken=spoken;
-      }
-    }
+  if(session!==g.session){cancelSpeech();announcedInstructions.clear();lastSpoken='';const first=session===null;if(session!==null)retiredSessions.add(session);session=g.session;eventId=first?g.event_id:-1;seq=null}
+  const alertPosition=g.session+'|'+(g.fen||'')+'|'+(g.pending||'');
+  if(error&&!g.strict_recovery&&!g.move_warning&&g.fresh&&g.camera_phase==='stable'&&!g.pending_arrived&&g.state!=='paused'&&
+      alertPosition!==errorAlertPosition&&playbackAllowed()){
+    clearTimeout(turnTimer);turnTimer=null;errorBeep();errorAlertPosition=alertPosition;
   }
-  if(!g.fresh||error||g.state==='paused'){cancelSpeech();clearTimeout(turnTimer)}
+  if(g.event_id>eventId){
+    const recent=g.events.filter(e=>e.id>eventId);eventId=g.event_id;
+    if(g.fresh&&!g.strict_recovery&&!error&&recent.some(e=>e.kind==='correct'))ding();
+  }
+  if(!currentSpeech())cancelSpeech();
+  else sayCurrent();
 
 }
+
+let promotionKey=null,promotionPiece='q',promotionRepresentation='pawn';
+const promotionNames={q:'queen',r:'rook',b:'bishop',n:'knight'};
+function promotionReady(g){
+  const choice=g?.promotion?.choices.find(c=>c.piece===promotionPiece);
+  return !!(choice&&choice[promotionRepresentation+'_ready']&&g.fresh&&g.camera_phase==='stable'&&g.orientation_status!=='mismatch'&&!actionBusy&&!flowBusy&&!transitionPending);
+}
+function renderPromotion(g){
+  const p=g.promotion;
+  $('#promotion-card').hidden=!p;
+  $('#game-view').className='layout'+(p?' promotion-active':'');
+  const proxies=g.proxies||[];
+  $('#proxy-status').hidden=!proxies.length;
+  $('#proxy-status').textContent=proxies.length?'P badge = physical pawn\n'+proxies.map(p=>p.name+' — pawn on '+p.square.toUpperCase()).join('\n'):'';
+  if(!p){promotionKey=null;return}
+  const key=g.session+':'+p.id;
+  if(key!==promotionKey){promotionKey=key;promotionPiece=p.piece;promotionRepresentation=p.representation;$('#promotion-feedback').hidden=true}
+  const name=promotionNames[promotionPiece],square=p.route.slice(2).toUpperCase();
+  $('#promotion-title').textContent=p.computer?'Computer promotes to '+name:'Promote your pawn';
+  $('#promotion-route').textContent=p.color[0].toUpperCase()+p.color.slice(1)+' · '+p.route.slice(0,2).toUpperCase()+' → '+square;
+  for(const symbol of Object.keys(promotionNames)){
+    const button=$('#promote-'+symbol);
+    button.disabled=actionBusy||!p.choices.some(c=>c.piece===symbol);
+    button.setAttribute('aria-pressed',String(symbol===promotionPiece));
+  }
+  for(const mode of ['pawn','piece']){
+    $('#promotion-'+mode).disabled=actionBusy;
+    $('#promotion-'+mode).setAttribute('aria-pressed',String(mode===promotionRepresentation));
+  }
+  $('#promotion-help').textContent=promotionRepresentation==='pawn'?'Leave the pawn on '+square+'. It will move as a '+name+'. No spare piece needed.':'Place a '+p.color+' '+name+' on '+square+' in place of the pawn.';
+  const ready=promotionReady(g);
+  $('#promotion-ready').textContent=ready?'Board matches. Ready to confirm.':!g.fresh?'Waiting for the camera.':g.camera_phase==='orienting'||g.orientation_status==='mismatch'?'Restore the board direction before confirming.':'Place the chosen piece on the promotion square and remove any captured piece.';
+  $('#confirm-promotion').disabled=!ready;
+  $('#confirm-promotion').textContent=actionBusy?'Confirming…':'Confirm '+name+' · '+(promotionRepresentation==='pawn'?'keep pawn':'use '+name);
+  $('#promotion-cancel').textContent=p.computer?'The computer chose the piece. You choose what to use on the physical board.':'To cancel, restore the position before this move, including any captured piece.';
+}
+for(const symbol of Object.keys(promotionNames))$('#promote-'+symbol).onclick=()=>{promotionPiece=symbol;$('#promotion-feedback').hidden=true;renderPromotion(current)};
+for(const mode of ['pawn','piece'])$('#promotion-'+mode).onclick=()=>{promotionRepresentation=mode;$('#promotion-feedback').hidden=true;renderPromotion(current)};
+$('#confirm-promotion').onclick=async()=>{
+  if(!promotionReady(current))return;
+  const data={session:current.session,event_id:current.event_id,promotion_id:current.promotion.id,piece:promotionPiece,representation:promotionRepresentation};
+  actionBusy=true;viewRevision++;renderPromotion(current);
+  try{
+    const r=await request('/api/confirm-promotion',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    const g=await r.json();if(!r.ok)throw Error(g.error||'Promotion could not be confirmed.');
+    show(g);
+  }catch(e){$('#promotion-feedback').textContent=e.message;$('#promotion-feedback').hidden=false}
+  finally{viewRevision++;actionBusy=false;if(current)renderPromotion(current)}
+};
+
 async function request(url,options={},timeout=4000){
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeout);
   try{return await fetch(url,{...options,signal:controller.signal})}finally{clearTimeout(timer)}
 }
 async function tick(){
-  if(busy||!playing||flowBusy)return;busy=true;
+  if(busy||actionBusy||!playing||flowBusy||playbackClosed)return;busy=true;const revision=viewRevision;
   try{
     const responses=await Promise.all([request('/api/game'),request('status.json')]);
-    if(!responses[0].ok)throw Error();show(await responses[0].json());
-    if(responses[1].ok){const s=await responses[1].json();frame(s.sequence)}
-  }catch(e){if(current)current.fresh=false;boardNotice('Camera disconnected. Wait.','wait');cancelSpeech();clearTimeout(turnTimer)}finally{busy=false}
+    if(!responses[0].ok)throw Error();const g=await responses[0].json();if(revision!==viewRevision||actionBusy||flowBusy||!playing||playbackClosed)return;show(g);
+    if(responses[1].ok){const s=await responses[1].json();if(revision===viewRevision&&!flowBusy&&playing&&!playbackClosed)frame(s.sequence)}
+  }catch(e){if(revision!==viewRevision||flowBusy||!playing||playbackClosed)return;if(current){current.fresh=false;renderPromotion(current)}boardNotice('Camera disconnected. Wait.','wait');cancelSpeech();clearTimeout(turnTimer);turnTimer=null}finally{busy=false}
 }
 async function action(path,data){
-  if(actionBusy)return;actionBusy=true;if(current)show(current);
+  if(actionBusy||flowBusy||playbackClosed)return;actionBusy=true;viewRevision++;const actionSession=session;if(current)show(current);
   try{
     const r=await request(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...data,session:current?.session,event_id:current?.event_id})});
-    const g=await r.json();if(!r.ok)throw Error(g.error||'Action failed.');
+    const g=await r.json();if(playbackClosed||session!==actionSession)return;if(!r.ok)throw Error(g.error||'Action failed.');
     note('');show(g);
-  }catch(e){note(e.message||'Local service unavailable. Wait for reconnection.')}
-  finally{actionBusy=false;if(current)show(current)}
+  }catch(e){if(!playbackClosed&&session===actionSession)note(e.message||'Local service unavailable. Wait for reconnection.')}
+  finally{viewRevision++;actionBusy=false;if(current)show(current)}
 }
 function screen(inGame){
+  viewRevision++;if(!inGame&&session!==null)retiredSessions.add(session);
   playing=inGame;$('#home').hidden=inGame;$('#game-header').hidden=!inGame;$('#game-view').hidden=!inGame;
-  if(!inGame){cancelSpeech();clearTimeout(turnTimer);$('#settings').close();$('#game-details').close();$('#confirm-correction').close();$('#correction').close();$('#save-dialog').close();$('#load-dialog').close();$('#endgame-setup').close();$('#orientation-confirm').close();$('#quit-confirm').close();transitionPending=null;current=null;session=null;eventId=-1;svg=null;seq=null;lastSpoken='';lastError='';$('#camera').getContext('2d').clearRect(0,0,$('#camera').width,$('#camera').height);$('#board').innerHTML=''}
+  if(!inGame){cancelSpeech();clearTimeout(turnTimer);turnTimer=null;$('#settings').close();$('#game-details').close();$('#correction').close();$('#save-dialog').close();$('#load-dialog').close();$('#endgame-setup').close();$('#orientation-confirm').close();$('#quit-confirm').close();transitionPending=null;current=null;session=null;eventId=-1;svg=null;seq=null;lastSpoken='';lastError='';correctionNotice=null;$('#camera').getContext('2d').clearRect(0,0,$('#camera').width,$('#camera').height);$('#board').innerHTML=''}
 }
 function refreshLibrary(){
   if(libraryPromise)return libraryPromise;
@@ -187,17 +321,34 @@ function refreshLibrary(){
   return libraryPromise;
 }
 async function enterGame(path,data={}){
-  if(flowBusy)return;flowBusy=true;muted=false;enable();note('Starting camera…');
+  if(flowBusy||actionBusy||playbackClosed)return;flowBusy=true;viewRevision++;cancelSpeech();stopTones();muted=false;enable(false);note('Starting camera…');
   try{
     const r=await request(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({difficulty:$('#difficulty').value,...data})},12000);
-    const g=await r.json();if(!r.ok)throw Error(g.error||'Could not start game.');
-    $('#load-dialog').close();screen(true);note('');muted=false;enable();show(g);reminderAt=Date.now()+3000;
-  }catch(e){if($('#load-dialog').open)$('#load-feedback').textContent=e.message;else note(e.message||'Could not start game. Try again.')}
-  finally{flowBusy=false;$('#start-game').disabled=false;$('#begin').disabled=false;tick()}
+    const g=await r.json();if(playbackClosed)return;if(!r.ok)throw Error(g.error||'Could not start game.');
+    $('#load-dialog').close();screen(true);note('');show(g);
+  }catch(e){if(!playbackClosed){mutePlayback();if($('#load-dialog').open)$('#load-feedback').textContent=e.message;else note(e.message||'Could not start game. Try again.')}}
+  finally{viewRevision++;flowBusy=false;if(!playbackClosed){$('#start-game').disabled=false;$('#begin').disabled=false;sayCurrent();tick()}}
 }
 $('#start-game').onclick=()=>enterGame('/api/start-game');
 $('#resume-game').onclick=()=>enterGame('/api/resume-game');
-$('#endgame').onclick=()=>enterGame('/api/start-endgame');
+let sideChoice=null;
+function choosePlayer(path,data={},player=''){
+  if(flowBusy||actionBusy||playbackClosed)return;
+  sideChoice={path,data};$('#chosen-player').value=player||'';
+  $('#confirm-player').disabled=!['white','black'].includes($('#chosen-player').value);
+  $('#choose-player-note').textContent='Choose your pieces before scanning the position.';
+  $('#choose-player').showModal();
+}
+$('#chosen-player').onchange=()=>{$('#confirm-player').disabled=!['white','black'].includes($('#chosen-player').value)};
+$('#cancel-player').onclick=()=>{$('#choose-player').close();sideChoice=null};
+$('#choose-player').addEventListener('cancel',()=>{sideChoice=null});
+$('#confirm-player').onclick=async()=>{
+  const choice=sideChoice,player=$('#chosen-player').value;
+  if(!choice||flowBusy||actionBusy||!['white','black'].includes(player))return;
+  sideChoice=null;$('#choose-player').close();
+  await enterGame(choice.path,{...choice.data,player});
+};
+$('#endgame').onclick=()=>choosePlayer('/api/start-endgame');
 let pendingDelete=null,deleteBusy=false;
 function renderSavedGames(games){
   $('#saved-list').replaceChildren(...games.map(item=>{
@@ -232,20 +383,20 @@ $('#confirm-delete').onclick=async()=>{
 };
 async function completeTransition(kind){
   if(!['exit','new','quit'].includes(kind))return;
-  if(flowBusy)return;flowBusy=true;cancelSpeech();clearTimeout(turnTimer);
+  if(flowBusy||actionBusy||playbackClosed)return;flowBusy=true;viewRevision++;cancelSpeech();stopTones();clearTimeout(turnTimer);turnTimer=null;
   try{
     const path=kind==='quit'?'/api/quit-app':kind==='exit'?'/api/exit-game':'/api/new-game';
     const r=await request(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session:current?.session,difficulty:$('#difficulty').value})},12000);
-    const g=await r.json();if(!r.ok)throw Error(g.error||'Try again.');
+    const g=await r.json();if(playbackClosed)return;if(!r.ok)throw Error(g.error||'Try again.');
     if(kind==='quit'){applicationClosed();return}
     if(kind==='exit'){screen(false);shutdownPlayback();window.location.replace('/');return}
     else{show(g);reminderAt=Date.now()+3000}
-  }catch(e){note(e.message)}finally{flowBusy=false;transitionPending=null;tick()}
+  }catch(e){if(!playbackClosed)note(e.message)}finally{viewRevision++;flowBusy=false;transitionPending=null;if(!playbackClosed){sayCurrent();tick()}}
 }
 function askToSave(kind){
-  if(flowBusy||transitionPending)return;
+  if(flowBusy||actionBusy||playbackClosed||transitionPending)return;
   if(!current?.can_save){completeTransition(kind);return}
-  transitionPending=kind;cancelSpeech();clearTimeout(turnTimer);
+  transitionPending=kind;cancelSpeech();clearTimeout(turnTimer);turnTimer=null;
   $('#save-title').textContent=kind==='save'?'Save current position':'Save before '+(kind==='quit'?'quitting the application?':kind==='exit'?'returning home?':'starting a new game?');
   $('#save-name').value='';$('#save-feedback').textContent='';$('#save-no').hidden=kind==='save';$('#save-dialog').showModal();
 }
@@ -281,97 +432,160 @@ $('#confirm-position').onclick=()=>{
 };
 $('#cancel-position').onclick=()=>$('#endgame-setup').close();
 $('#start-position').onclick=async()=>{
-  if(actionBusy)return;actionBusy=true;$('#start-position').disabled=true;
+  if(actionBusy||flowBusy||playbackClosed)return;actionBusy=true;viewRevision++;$('#start-position').disabled=true;
   try{
     const r=await request('/api/confirm-endgame',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session:current.session,placement:positionPlacement,turn:$('#endgame-turn').value,player:$('#endgame-player').value})});
     const g=await r.json();if(!r.ok)throw Error(g.error);$('#endgame-setup').close();show(g);
   }catch(e){$('#endgame-feedback').textContent=e.message;if(current?.state==='endgame_ready'){positionPlacement=current.fen.split(' ')[0];$('#position-preview').innerHTML=current.board_svg}}
-  finally{actionBusy=false;$('#start-position').disabled=false}
+  finally{viewRevision++;actionBusy=false;$('#start-position').disabled=false}
 };
 $('#flip-restart').onclick=()=>{ $('#orientation-confirm').close();askToSave('new') };
 $('#orientation-confirm').addEventListener('cancel',e=>e.preventDefault());
 $('#draw').onclick=()=>action('/api/claim-draw');
 
-let fixSeen=null,fixSession=null,fixBoardSvg=null;
+let fixSnapshot=null,fixDraft={},fixBoardSvg=null,lastCorrectionRequest=null;
+const diagnosticLast=new Map();
+function logUI(event,detail='',changes){
+  if(['camera_image_error','page_error'].includes(event)){const key=event+detail;if(Date.now()-(diagnosticLast.get(key)||0)<10000)return;diagnosticLast.set(key,Date.now())}
+  fetch('/api/diagnostics',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({event,detail,changes,correction_id:fixSnapshot?.correction_id,session:current?.session}),keepalive:true}).catch(()=>{});
+}
+window.addEventListener('error',e=>logUI('page_error',e.message));
+window.addEventListener('unhandledrejection',e=>logUI('page_error',String(e.reason)));
+function updateFixSummary(){
+  const count=Object.keys(fixDraft).length;
+  $('#apply-fix').disabled=actionBusy||!count;
+  $('#apply-fix').textContent=actionBusy?'Applying…':count?'Apply '+count+' correction'+(count===1?'':'s'):'Apply corrections';
+  $('#fix-reset').disabled=actionBusy||!count;
+  $('#fix-summary').textContent=count?count+' square'+(count===1?'':'s')+' ready · tap another square to keep editing':'Choose a square, then select its actual piece.';
+  $('#fix-changes').replaceChildren(...Object.entries(fixDraft).map(([name,piece])=>{
+    const button=document.createElement('button');button.disabled=actionBusy;
+    button.textContent=name.toUpperCase()+': '+pieceNames[pieceAt(fixSnapshot.observed_placement,name)]+' → '+pieceNames[piece]+' · Undo';
+    button.setAttribute('aria-label','Undo correction on '+name.toUpperCase());
+    button.onclick=()=>{if(actionBusy)return;delete fixDraft[name];logUI('undo',name,{...fixDraft});selectFix()};
+    return button;
+  }));
+}
 const pieceNames={'.':'Empty',P:'White pawn',N:'White knight',B:'White bishop',R:'White rook',Q:'White queen',K:'White king',p:'Black pawn',n:'Black knight',b:'Black bishop',r:'Black rook',q:'Black queen',k:'Black king'};
 for(const [value,label] of Object.entries(pieceNames))$('#fix-piece').add(new Option(label,value));
 for(let rank=1;rank<=8;rank++)for(const file of 'abcdefgh')$('#fix-square').add(new Option((file+rank).toUpperCase(),file+rank));
-function detectedPiece(name){
-  const rows=current.raw_placement.split('/');let row=[];
+function pieceAt(placement,name){
+  const rows=placement.split('/');let row=[];
   for(const c of rows[8-Number(name[1])]){if(/[1-8]/.test(c))row.push(...Array(Number(c)).fill('.'));else row.push(c)}
   return row[name.charCodeAt(0)-97];
 }
-function choosePiece(piece){
+function paletteId(piece){return 'palette-'+pieceNames[piece].toLowerCase().replace(' ','-')}
+function choosePiece(piece,edit=true){
+  if(actionBusy)return;
   $('#fix-piece').value=piece;
   $('#fix-choice').textContent='Actual: '+pieceNames[piece];
   for(const button of $('#correction').querySelectorAll('[data-piece]'))button.setAttribute('aria-pressed',String(button.dataset.piece===piece));
+  if(edit){fixDraft[$('#fix-square').value]=piece;logUI('edit',$('#fix-square').value,{...fixDraft});renderFixBoard()}
+  updateFixSummary();
 }
 function renderFixBoard(){
-  // Use the exact game board, including orientation, arrows and red error marks.
-  // Namespace definitions so this second SVG never points at the other board's pieces.
-  if(fixBoardSvg!==current.board_svg){
-    fixBoardSvg=current.board_svg;
-    $('#fix-board').innerHTML=current.board_svg.replaceAll('#ffbb55','#53c9a5').replaceAll('#15781B','#53c9a5').replace(/id="([^"]+)"/g,'id="fix-$1"').replace(/(href=")#([^"]+)"/g,'$1#fix-$2"');
+  if(!fixSnapshot)return;
+  if(fixBoardSvg!==fixSnapshot.correction_svg){
+    fixBoardSvg=fixSnapshot.correction_svg;
+    $('#fix-board').innerHTML=fixBoardSvg.replace(/id="([^"]+)"/g,'id="fix-$1"').replace(/(href=")#([^"]+)"/g,'$1#fix-$2"');
   }
+  const root=$('#fix-board').querySelector('svg');
+  for(const node of root.querySelectorAll('use'))node.remove();
   for(const square of $('#fix-board').querySelectorAll('rect.square')){
     const name=[...square.classList].find(c=>/^[a-h][1-8]$/.test(c));
+    const symbol=fixDraft[name]??pieceAt(fixSnapshot.observed_placement,name);
+    if(symbol!=='.'){
+      const piece=document.createElementNS('http://www.w3.org/2000/svg','use');
+      piece.setAttribute('href','#'+paletteId(symbol));
+      piece.setAttribute('transform','translate('+square.getAttribute('x')+','+square.getAttribute('y')+')');
+      root.appendChild(piece);
+    }
     square.classList.toggle('selected',name===$('#fix-square').value);
+    square.classList.toggle('edited',Object.hasOwn(fixDraft,name));
     square.setAttribute('tabindex','0');square.setAttribute('role','button');
-    square.setAttribute('aria-label',name.toUpperCase()+(current.errors.some(e=>e.toLowerCase().startsWith(name+':'))?' — check recognition':'') );
+    square.setAttribute('aria-label',name.toUpperCase()+': '+pieceNames[symbol]);
     square.setAttribute('aria-pressed',String(name===$('#fix-square').value));
   }
 }
 function buildPieceOptions(){
-  const defs=$('#fix-board').querySelector('defs')?.innerHTML||'';
   for(const color of ['black','white']){
     const container=$('#'+color+'-pieces');container.innerHTML='';
     for(const symbol of (color==='black'?'pnbrqk':'PNBRQK')){
       const button=document.createElement('button');button.className='piece-option';button.dataset.piece=symbol;
       button.setAttribute('aria-label',pieceNames[symbol]);button.title=pieceNames[symbol];button.setAttribute('aria-pressed','false');
       const type=pieceNames[symbol].split(' ')[1];
-      // Each icon has its own definitions to avoid duplicate SVG IDs.
-      const prefix='choice-'+symbol+'-';
-      button.innerHTML='<svg viewBox="0 0 45 45" aria-hidden="true"><defs>'+defs.replaceAll('fix-',prefix)+'</defs><use href="#'+prefix+color+'-'+type+'"/></svg>';
+      button.innerHTML='<svg viewBox="0 0 45 45" aria-hidden="true"><use href="#'+paletteId(symbol)+'"/></svg><small>'+type+'</small>';
       button.onclick=()=>choosePiece(symbol);container.appendChild(button);
     }
   }
 }
 function selectFix(){
-  if(!current?.fresh||!current.raw_placement)return;
-  fixSeen=detectedPiece($('#fix-square').value);fixSession=current.session;
-  $('#fix-selected').textContent=$('#fix-square').value.toUpperCase();
-  $('#fix-seen').textContent='Camera sees: '+pieceNames[fixSeen];
-  renderFixBoard();choosePiece(current.manual_corrections?.[$('#fix-square').value]?.piece||fixSeen);
-  $('#fix-feedback').textContent='';
+  if(!fixSnapshot||actionBusy)return;
+  const name=$('#fix-square').value;
+  $('#fix-selected').textContent=name.toUpperCase();
+  $('#fix-seen').textContent='Camera snapshot: '+pieceNames[pieceAt(fixSnapshot.raw_placement,name)];
+  renderFixBoard();choosePiece(fixDraft[name]??pieceAt(fixSnapshot.observed_placement,name),false);
 }
-function openFix(name){
-  if(!current?.fresh||!current.raw_placement)return;
-  $('#fix-square').value=name||current.errors.map(e=>e.match(/^([a-h][1-8]):/i)?.[1]?.toLowerCase()).find(Boolean)||'a8';
-  renderFixBoard();buildPieceOptions();selectFix();$('#correction').showModal();
+async function openFix(name,reload=false){
+  if(actionBusy||!current?.fresh||!current.raw_placement)return;
+  cancelSpeech();stopTones();clearTimeout(turnTimer);turnTimer=null;
+  // Closing the editor keeps unfinished work for this same position.
+  if(reload||!fixSnapshot||!Object.keys(fixDraft).length||fixSnapshot.session!==current.session||fixSnapshot.position_token!==current.position_token){
+    actionBusy=true;viewRevision++;$('#fix').disabled=true;$('#fix').textContent='Taking snapshot…';
+    try{
+      const r=await request('/api/correction-context',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session:current.session,recognition_frame:current.recognition_frame,position_token:current.position_token,observed_placement:current.observed_placement})});
+      if(r.status===404)throw Error('Save your game and restart Camera Chess to enable correction records.');
+      const snapshot=await r.json();if(!r.ok)throw Error(snapshot.error);
+      if(!playing||current.session!==snapshot.session)return;
+      fixSnapshot=snapshot;fixDraft={};fixBoardSvg=null;
+    }catch(e){if($('#correction').open)$('#fix-feedback').textContent=e.message;else boardNotice('Could not open corrections. '+e.message,'error');return}
+    finally{viewRevision++;actionBusy=false;$('#fix').disabled=!current?.fresh;$('#fix').textContent='Fix recognition'}
+  }
+  $('#fix-square').value=name||fixSnapshot.errors.map(e=>e.match(/^([a-h][1-8]):/i)?.[1]?.toLowerCase()).find(Boolean)||'a8';
+  $('#fix-feedback').textContent='';$('#fix-live-status').textContent='';
+  $('#fix-camera').hidden=false;$('#fix-camera').src='/api/correction-camera/'+fixSnapshot.correction_id;
+  $('#fix-camera').onerror=()=>{$('#fix-camera').hidden=true;$('#fix-camera-note').textContent='Camera snapshot unavailable; board changes will still be recorded.'};
+  $('#fix-camera-note').textContent=fixSnapshot.evidence_warning?'Some camera evidence is unavailable. Your corrections will still be recorded.':'This is the original frame for this reading. Your edits stay linked to it, even if the live camera changes.';
+  buildPieceOptions();selectFix();if(!$('#correction').open)$('#correction').showModal();
 }
 $('#fix').onclick=()=>openFix();$('#fix-square').onchange=selectFix;
 $('#empty-piece').onclick=()=>choosePiece('.');
-$('#cancel-fix').onclick=()=>$('#correction').close();
+$('#cancel-fix').onclick=()=>{if(!actionBusy){logUI('cancel','Draft retained',{...fixDraft});$('#correction').close()}};
+$('#refresh-fix').onclick=()=>openFix(undefined,true);
+$('#fix-reset').onclick=()=>{if(actionBusy)return;fixDraft={};logUI('reset');selectFix()};
+$('#correction').addEventListener('cancel',e=>{if(actionBusy)e.preventDefault();else logUI('cancel','Escape; draft retained',{...fixDraft})});
 $('#clear-fixes').onclick=()=>action('/api/clear-corrections');
-$('#fix-board').onclick=e=>{const square=e.target.closest('rect.square');if(square){const name=[...square.classList].find(c=>/^[a-h][1-8]$/.test(c));if(name){$('#fix-square').value=name;selectFix()}}};
+$('#fix-board').onclick=e=>{if(actionBusy)return;const square=e.target.closest('rect.square');if(square){const name=[...square.classList].find(c=>/^[a-h][1-8]$/.test(c));if(name){$('#fix-square').value=name;selectFix()}}};
 $('#fix-board').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.target.dispatchEvent(new MouseEvent('click',{bubbles:true}))}};
-$('#apply-fix').onclick=()=>{
-  if(actionBusy)return;
-  $('#confirm-fix-description').textContent=$('#fix-square').value.toUpperCase()+' → '+pieceNames[$('#fix-piece').value];
-  $('#confirm-correction').showModal();
+$('#apply-fix').onclick=async()=>{
+  if(actionBusy||!Object.keys(fixDraft).length)return;
+  const data={session:fixSnapshot.session,position_token:fixSnapshot.position_token,correction_id:fixSnapshot.correction_id,changes:{...fixDraft}};
+  actionBusy=true;viewRevision++;$('#apply-fix').disabled=true;$('#apply-fix').textContent='Applying…';$('#fix-feedback').textContent='';
+  try{
+    const r=await request('/api/correct-squares',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    const g=await r.json();if(!r.ok)throw Error(g.error);
+    $('#correction').close();lastCorrectionRequest=data;fixSnapshot=null;fixDraft={};correctionNotice={text:g.evidence_warning||'Corrections applied and recorded. Checking the board…',until:Date.now()+(g.evidence_warning?15000:3500)};show(g);reminderAt=errorReminderAt=Date.now()+5000;
+  }catch(e){$('#fix-feedback').textContent=e.name==='AbortError'?'Request timed out. Your edits are kept; retry Apply.':e.message;logUI('apply_error',$('#fix-feedback').textContent,{...fixDraft})}
+  finally{viewRevision++;actionBusy=false;updateFixSummary()}
 };
-$('#back-fix').onclick=()=>$('#confirm-correction').close();
-$('#confirm-fix').onclick=async()=>{
-  if(actionBusy)return;actionBusy=true;$('#confirm-fix').disabled=true;$('#apply-fix').disabled=true;
-  try{const r=await request('/api/correct-square',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session:fixSession,square:$('#fix-square').value,piece:$('#fix-piece').value,seen:fixSeen})});const g=await r.json();if(!r.ok)throw Error(g.error);show(g);$('#confirm-correction').close();$('#correction').close()}
-  catch(e){$('#confirm-correction').close();$('#fix-feedback').textContent=e.message}
-  finally{actionBusy=false;$('#confirm-fix').disabled=false;$('#apply-fix').disabled=false}
+$('#retry-fix-record').onclick=async()=>{
+  if(actionBusy||!lastCorrectionRequest)return;
+  actionBusy=true;viewRevision++;$('#retry-fix-record').disabled=true;
+  try{
+    const r=await request('/api/correct-squares',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lastCorrectionRequest)});
+    const g=await r.json();if(!r.ok)throw Error(g.error);show(g);
+    if(!g.evidence_warning)$('#fix-record-feedback').textContent='Correction record saved.';
+  }catch(e){$('#fix-record-feedback').textContent=e.message}
+  finally{actionBusy=false;viewRevision++;$('#retry-fix-record').disabled=false}
 };
 $('#board').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.target.dispatchEvent(new MouseEvent('click',{bubbles:true}))}};
 $('#board').onclick=e=>{const square=e.target.closest('rect.square');if(square){const name=[...square.classList].find(c=>/^[a-h][1-8]$/.test(c));if(name)openFix(name)}};
 
 function shutdownPlayback(){
-  voice=false;muted=true;cancelSpeech();clearTimeout(turnTimer);turnTimer=null;
+  if(playbackClosed)return;
+  playbackClosed=true;viewRevision++;
+  voice=false;muted=true;cancelSpeech();stopTones();clearTimeout(turnTimer);turnTimer=null;
+  setTimeout(settleCanceledSpeech,Math.max(0,speechNotBefore-Date.now()));
   clearInterval(reminderTimer);clearInterval(gameTimer);clearInterval(libraryTimer);clearInterval(pageTimer);
   const oldAudio=audio;audio=null;
   if(oldAudio&&oldAudio.state!=='closed')oldAudio.close().catch(()=>{});
@@ -385,7 +599,7 @@ window.addEventListener('storage',e=>{
 });
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden&&voice){const wasMuted=muted;mutePlayback();muted=wasMuted;try{if(ownsVoice())localStorage.removeItem('chess-voice-owner')}catch(e){}}
-  else if(!document.hidden&&playing&&!voice&&!muted&&!flowBusy&&!transitionPending){enable();sayCurrent();reminderAt=Date.now()+3000}
+  else if(!document.hidden&&playing&&!voice&&!muted&&!flowBusy&&!transitionPending){enable(false);reminderAt=errorReminderAt=Date.now()+5000;pageHeartbeat();tick()}
 });
 window.addEventListener('pagehide',()=>{
   shutdownPlayback();
@@ -398,13 +612,13 @@ function applicationClosed(){
   note('Camera Chess is closed. Double-click Camera Chess to start again.');
 }
 async function pageHeartbeat(){
-  if(pageBusy)return;pageBusy=true;
+  if(pageBusy||playbackClosed)return;pageBusy=true;const revision=viewRevision;
   try{
     const r=await request('/api/page-heartbeat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({page:voiceOwner})});
     if(!r.ok)return;
-    const data=await r.json();pageConnected=true;pageFailures=0;if(!data.running){applicationClosed();return}
+    const data=await r.json();if(playbackClosed)return;pageConnected=true;pageFailures=0;if(!data.running){applicationClosed();return}
     if(lastFocus!==null&&data.focus_id!==lastFocus)window.focus();lastFocus=data.focus_id;
-  }catch(e){if(playing){cancelSpeech();clearTimeout(turnTimer)}if(pageConnected&&++pageFailures>=2)applicationClosed()}finally{pageBusy=false}
+  }catch(e){if(pageConnected&&!playbackClosed){pageFailures++;if(revision===viewRevision)note('Connection interrupted. Reconnecting…')}}finally{pageBusy=false}
 }
 const pageTimer=setInterval(pageHeartbeat,2000);pageHeartbeat();
 const gameTimer=setInterval(tick,200),libraryTimer=setInterval(()=>{if(!playing)refreshLibrary()},3000);refreshLibrary();tick();

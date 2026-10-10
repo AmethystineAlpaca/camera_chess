@@ -45,8 +45,8 @@ class BrowserPresence:
 
     def has_pages(self):
         with self.lock:
-            now = self.clock()
-            self.pages = {key: seen for key, seen in self.pages.items() if now-seen < self.timeout}
+            # Background browsers throttle/freeze timers. Missing heartbeats do
+            # not prove that a tab closed; only an explicit leave releases it.
             return bool(self.pages)
 
     def should_stop_camera(self):
@@ -58,7 +58,7 @@ class BrowserPresence:
     def open_browser(self):
         with self.lock:
             now = self.clock()
-            active = any(now-seen < self.timeout for seen in self.pages.values())
+            active = bool(self.pages)
             waiting = self.open_requested is not None and now-self.open_requested < self.timeout
             self.focus_id += 1
             if not active and not waiting:

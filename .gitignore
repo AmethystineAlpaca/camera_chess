@@ -20,3 +20,19 @@ validation/results/lite-live/*
 !validation/results/lite-live/index.html
 validation/saved-games/
 validation/game-state*.json
+validation/recognition-logs/
+
+# Local tools, credentials, caches and temporary artifacts
+node_modules/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+*.tmp
+*.bak
+*.swp
+*.p12
+*.pfx
+credentials*.json

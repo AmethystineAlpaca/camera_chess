@@ -84,7 +84,13 @@ class GameTests(unittest.TestCase):
             with self.subTest(uci=uci):
                 g=Game(object()); g.board=chess.Board(fen); g.state='player_turn'
                 after=g.board.copy(); after.push_uci(uci)
-                with patch('chess_game.threading.Thread'): g.accept_observation(after)
+                with patch('chess_game.threading.Thread'):
+                    g.accept_observation(after)
+                    if chess.Move.from_uci(uci).promotion:
+                        self.assertFalse(g.history)
+                        g.camera_phase='stable';g.last_frame=g.last_supported=100
+                        with patch('chess_game.time.time',return_value=100):
+                            g.confirm_promotion(g.promotion['id'],uci[4],'piece')
                 self.assertEqual(g.board.fen(),after.fen())
 
     def test_special_instructions(self):
@@ -277,6 +283,7 @@ class GameTests(unittest.TestCase):
         self.assertTrue(g.suggestions);self.assertIn('No need to reset',g.message)
         for option in g.suggestions:self.assertIn(chess.Move.from_uci(option['uci']),g.board.legal_moves)
         self.assertEqual(len(g.history),0)
+        g.last_frame=100;g.camera_phase='stable'
         data=g.snapshot(100);self.assertTrue(data['errors']);self.assertTrue(data['suggestions'])
         self.assertNotIn('e2: detected empty; expected White pawn',data['errors'])
 

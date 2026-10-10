@@ -7,16 +7,19 @@ import shutil
 import signal
 import threading
 import time
+import traceback
 import chess.engine
 from chess_game import Game
 from camera_session import CameraSession
 from app_lifecycle import LauncherLease, BrowserPresence
 from saved_games import SavedGames
+from recognition_log import RecognitionLog, read_observation
 
 R = Path(__file__).resolve().parents[1]
 D = R/'validation/frames/lite-live'
 O = R/'validation/results/lite-live'
 O.mkdir(parents=True, exist_ok=True)
+audit = RecognitionLog(R/'validation/recognition-logs')
 camera = CameraSession(R)
 engine = None
 candidates = [os.environ.get('STOCKFISH_PATH'), shutil.which('stockfish'), '/opt/homebrew/bin/stockfish', '/usr/local/bin/stockfish']
@@ -52,7 +55,10 @@ upgrade_snapshot=os.environ.get('CHESS_RUNTIME_SNAPSHOT')
 if upgrade_snapshot:
     path=Path(upgrade_snapshot)
     try:
-        game.load_data(json.loads(path.read_text()),automatic=True,strict=True)
+        runtime_data=json.loads(path.read_text())
+        game.load_data(runtime_data,strict=True)
+        if runtime_data.get('runtime_paused'):
+            game.pause()
     finally:
         path.unlink(missing_ok=True)
 
@@ -60,7 +66,7 @@ def observe():
     previous_control = None
     while True:
         with game.lock:
-            control = {'session':game.id,'needs_orientation':True}
+            control = {'session':game.id,'needs_orientation':game.side_auto}
         if control != previous_control:
             try:
                 temporary = O/'orientation-control.tmp'
@@ -75,12 +81,16 @@ def observe():
                 with game.lock:
                     game.camera_phase = 'stopped'
                     game.clear_observations()
+                    audit.observe(game)
                 time.sleep(.1)
                 continue
-            record = json.loads((O/'status.json').read_text())
-            game.observe(record, time.monotonic(), time.time())
-        except (OSError, ValueError, KeyError):
-            pass
+            record, jpeg = read_observation(O)
+            with game.lock:
+                game.observe(record, time.monotonic(), time.time())
+                audit.observe(game, record, jpeg)
+                audit.problem(None)
+        except (OSError, ValueError, KeyError) as exc:
+            audit.problem(exc)
         time.sleep(.1)
 threading.Thread(target=observe, daemon=True).start()
 
@@ -93,20 +103,42 @@ class Handler(SimpleHTTPRequestHandler):
     def log_message(self, *a):
         pass
     def respond(self, value, status=200):
+        if value.get('recognition_frame'):
+            audit.remember_view(value)
+        if self.command == 'POST' and self.path not in ('/api/diagnostics','/api/page-heartbeat','/api/page-leave','/api/launcher-heartbeat','/api/browser-entry'):
+            audit.event('request_completed',path=self.path,status=status,session=game.id,
+                        state=game.state,error=value.get('error'),correction_id=value.get('correction_id'))
         data = json.dumps(value).encode()
-        self.send_response(status)
-        self.send_header('Content-Type', 'application/json')
-        self.send_header('Content-Length', str(len(data)))
-        self.end_headers()
-        self.wfile.write(data)
+        try:
+            self.send_response(status)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+        except (BrokenPipeError, ConnectionResetError):
+            audit.event('response_lost',path=self.path,status=status,correction_id=value.get('correction_id'))
     def do_GET(self):
         if self.path.split('?')[0] == '/api/game':
-            self.respond(game.snapshot(time.time()))
+            with game.lock:
+                snapshot = audit.remember_view(game.snapshot(time.time()))
+                self.respond(snapshot)
         elif self.path.split('?')[0] == '/api/app-status':
             self.respond({'running':not quit_requested.is_set()})
         elif self.path.split('?')[0] == '/api/library':
             with game.lock:
                 self.respond(dict(games=library.list(),can_resume=game.state not in ('setup','endgame_scan','endgame_ready')))
+        elif self.path.split('?')[0].startswith(('/api/correction-camera/','/api/correction-review/')):
+            try:
+                directory = audit.directory(self.path.split('?')[0].rsplit('/',1)[1])
+                review = self.path.startswith('/api/correction-review/')
+                data = (directory/('review.html' if review else 'recognized-camera.jpg')).read_bytes()
+                self.send_response(200)
+                self.send_header('Content-Type','text/html; charset=utf-8' if review else 'image/jpeg')
+                self.send_header('Content-Length',str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+            except (OSError,ValueError):
+                self.send_error(404)
         else:
             super().do_GET()
     def read_json(self, required=False):
@@ -121,12 +153,13 @@ class Handler(SimpleHTTPRequestHandler):
         if ('session' in data and data['session'] != game.id) or ('event_id' in data and data['event_id'] != game.event_id):
             raise ValueError('The game changed in another tab. Review the current board and try again.')
     def do_POST(self):
-        if self.headers.get('Origin') not in (None, 'http://127.0.0.1:8769', 'http://localhost:8769'):
+        if self.headers.get('Origin') not in (None, f'http://127.0.0.1:{self.server.server_port}', f'http://localhost:{self.server.server_port}'):
+            audit.event('request_rejected',path=self.path,reason='Unexpected origin')
             self.respond({'error':'Unexpected origin.'},403)
             return
         actions = {'/api/pause':game.pause,'/api/resume':game.resume,'/api/undo':game.undo_round,
                    '/api/claim-draw':game.claim_draw,'/api/clear-corrections':game.clear_corrections}
-        if self.path not in (*actions,'/stop','/api/new-game','/api/start-game','/api/exit-game','/api/load-saved','/api/correct-square','/api/save-game','/api/delete-game','/api/load-game','/api/resume-game','/api/start-endgame','/api/confirm-endgame','/api/quit-app','/api/launcher-heartbeat','/api/page-heartbeat','/api/page-leave','/api/browser-entry'):
+        if self.path not in (*actions,'/stop','/api/new-game','/api/start-game','/api/exit-game','/api/load-saved','/api/correction-context','/api/diagnostics','/api/correct-square','/api/correct-squares','/api/save-game','/api/delete-game','/api/load-game','/api/resume-game','/api/start-endgame','/api/confirm-endgame','/api/confirm-promotion','/api/quit-app','/api/launcher-heartbeat','/api/page-heartbeat','/api/page-leave','/api/browser-entry'):
             self.send_error(404)
             return
         try:
@@ -147,6 +180,10 @@ class Handler(SimpleHTTPRequestHandler):
             if self.path == '/api/launcher-heartbeat':
                 launcher_lease.heartbeat()
                 self.respond({'running':not quit_requested.is_set()})
+                return
+            if self.path == '/api/diagnostics':
+                audit.client_event(data)
+                self.respond({'logged':True})
                 return
             with game.lock:
                 self.validate_current(data)
@@ -176,7 +213,7 @@ class Handler(SimpleHTTPRequestHandler):
                     library.delete(data.get('id'))
                     self.respond(dict(games=library.list()))
                 elif self.path == '/api/load-game':
-                    game.load_data(library.load(data.get('id')),automatic=True,strict=True)
+                    game.load_data(library.load(data.get('id')),strict=True)
                     camera.start()
                     self.respond(game.snapshot(time.time()))
                 elif self.path == '/api/resume-game':
@@ -184,15 +221,46 @@ class Handler(SimpleHTTPRequestHandler):
                     camera.start()
                     self.respond(game.snapshot(time.time()))
                 elif self.path == '/api/start-endgame':
-                    game.start_endgame(data.get('difficulty','normal'))
+                    game.start_endgame(data.get('difficulty','normal'),data.get('player'))
                     camera.start()
                     self.respond(game.snapshot(time.time()))
                 elif self.path == '/api/confirm-endgame':
                     game.confirm_endgame(data.get('placement'),data.get('turn'),data.get('player'))
                     self.respond(game.snapshot(time.time()))
+                elif self.path == '/api/confirm-promotion':
+                    game.confirm_promotion(data.get('promotion_id'),data.get('piece'),data.get('representation'))
+                    self.respond(game.snapshot(time.time()))
+                elif self.path == '/api/correction-context':
+                    snapshot = game.snapshot(time.time())
+                    if not snapshot['fresh'] or not snapshot['raw_placement']:
+                        raise ValueError('Wait for a live camera image before correcting the board.')
+                    snapshot = audit.reviewed_view(data,snapshot)
+                    identity, missing = audit.open(snapshot)
+                    self.respond(dict(snapshot, correction_id=identity, evidence_warning=bool(missing)))
                 elif self.path == '/api/correct-square':
                     game.correct_square(data.get('square'),data.get('piece'),data.get('seen'))
                     self.respond(game.snapshot(time.time()))
+                elif self.path == '/api/correct-squares':
+                    identity = data.get('correction_id')
+                    before = game.snapshot(time.time())
+                    if identity is None:
+                        raise ValueError('This page has no original recognition snapshot. Reload the page and review the board before applying corrections.')
+                    if audit.prepare(identity,data,before):
+                        game.correct_squares(data.get('changes'),data.get('position_token'))
+                        after = game.snapshot(time.time())
+                        try:
+                            audit.finish(identity,data['changes'],after)
+                        except OSError as exc:
+                            audit.event('correction_evidence_save_failed',id=identity,error=str(exc))
+                            self.respond(dict(after,correction_id=identity,evidence_report=False,
+                                evidence_warning='Corrections applied, but some evidence could not be saved. Check disk space.'))
+                            return
+                    else:
+                        try:
+                            audit.recover(identity)
+                        except OSError as exc:
+                            audit.event('correction_archive_recovery_failed',id=identity,error=str(exc))
+                    self.respond(dict(game.snapshot(time.time()),**audit.receipt(identity)))
                 elif self.path == '/api/new-game':
                     game.reset('auto',data.get('difficulty','normal'),False)
                     self.respond(game.snapshot(time.time()))
@@ -203,7 +271,12 @@ class Handler(SimpleHTTPRequestHandler):
                     actions[self.path]()
                     self.respond(game.snapshot(time.time()))
         except (ValueError,TypeError,OSError) as exc:
+            audit.event('request_failed', path=self.path, error=str(exc),
+                        correction_id=locals().get('data',{}).get('correction_id'), session=game.id)
             self.respond({'error':str(exc)},400)
+        except Exception as exc:
+            audit.event('request_exception',path=self.path,error=str(exc),traceback=traceback.format_exc())
+            self.respond({'error':'Something went wrong. Your edits are kept. Check the board before retrying.'},500)
 
 server = ThreadingHTTPServer(('127.0.0.1', 8769), Handler)
 def watch_launcher():
