@@ -36,7 +36,7 @@ Recognition accuracy still needs improvement, especially across different boards
 ```mermaid
 flowchart TD
     C["Camera frame"] --> V["ChessQ Lite V4 · frozen weights<br/>64 × 13 piece probabilities"]
-    V --> R["Project-trained CRF<br/>25 learned weights"]
+    V --> R["Project-trained CRF"]
     G["Accepted board + turn"] --> R
     R --> T["Temporal stability + chess rules"]
     T --> G
@@ -47,7 +47,7 @@ flowchart TD
 
 The CRF is trained separately; the image recognizer's weights stay unchanged. It scores candidate positions using the previous board and current piece probabilities. Stable readings continue automatically through the turn rules. During the computer's turn, only its instructed move can be accepted; while it is thinking, another move cannot be committed. Corrections reconcile the edited board with current and recent positions and discard engine replies based on a mistaken move.
 
-The CRF was trained on **160,000 synthetic observations**, with **20,000 for validation** and **20,000 reserved for testing**. Its synthetic validation accuracy is not a camera-accuracy guarantee. See the [experiment log](docs/crf-experiment-log.md) for the design, validation results and current limitations, and the [dataset build record](docs/crf-data.md) for sources and reproducible preparation. Downloaded datasets, camera frames, saved games, correction archives and run logs stay local and are excluded from Git; the repository includes code, documentation and the small trained CRF checkpoint.
+The CRF and UI are still being tuned. Synthetic validation results do not establish real-world camera accuracy. See the [experiment log](docs/crf-experiment-log.md) for the design, validation results and current limitations, and the [dataset build record](docs/crf-data.md) for sources and reproducible preparation. Downloaded datasets, camera frames, saved games, correction archives and run logs stay local and are excluded from Git; the repository includes code, documentation and the small trained CRF checkpoint.
 
 ## V1 performance
 
@@ -101,7 +101,7 @@ If the displayed position is wrong, open **Fix recognition**, choose the actual 
 
 **Does it need cloud AI or a subscription?** No cloud inference account is required. Setup downloads the dependencies and model; board recognition and engine play then run locally.
 
-**Which recognition model does it use?** [ChessQ Lite](https://huggingface.co/joelseytre/chessq-lite), the ViT-S/14 V4 FP16 checkpoint (`cq-vit-s-644-v4-seed2-safetensors-fp16-r2`), followed by this project's separately trained 25-weight CRF. ChessQ supplies image probabilities, the CRF uses the previous position to interpret them, and Stockfish chooses the moves.
+**Which recognition model does it use?** [ChessQ Lite](https://huggingface.co/joelseytre/chessq-lite), the ViT-S/14 V4 FP16 checkpoint (`cq-vit-s-644-v4-seed2-safetensors-fp16-r2`), followed by this project's separately trained CRF. ChessQ supplies image probabilities, the CRF uses the previous position to interpret them, and Stockfish chooses the moves.
 
 **Does it support Windows, Linux, or online chess?** V1 targets Apple Silicon macOS and local play against Stockfish. It does not currently provide online game integration or a signed installer.
 
