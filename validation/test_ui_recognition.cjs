@@ -22,6 +22,7 @@ const base={recognition_frame:[17,1234.5],session:'recognition-test',position_to
 const diagnostics=[];
 context.fetch=async(path,options)=>{
   if(path==='/api/diagnostics'){diagnostics.push(JSON.parse(options.body));return {ok:true}}
+  if(path==='/api/end-correction')return {ok:true};
   assert.equal(path,'/api/correction-context');
   const request=JSON.parse(options.body);assert.deepEqual(request.recognition_frame,base.recognition_frame);assert.equal(request.position_token,base.position_token);assert.equal(request.observed_placement,base.observed_placement);return {ok:true,json:async()=>({...base,correction_id:'test-context'})};
 };
@@ -35,7 +36,7 @@ assert.equal(el('#apply-fix').textContent,'Apply 2 corrections');
 assert.equal(el('#fix-changes').children.length,2);
 el('#fix-changes').children[1].onclick();assert.equal(run('fixDraft.e7'),undefined);
 run('choosePiece(".")');assert.equal(el('#fix-changes').children.length,2);
-run('$("#cancel-fix").onclick()');assert.equal(el('#correction').open,false);
+await run('$("#cancel-fix").onclick()');assert.equal(el('#correction').open,false);
 await run('openFix("d2")');assert.equal(run('fixDraft.d2'),'r');assert.equal(el('#fix-changes').children.length,2);
 assert.ok(diagnostics.some(d=>d.event==='undo'));assert.ok(diagnostics.some(d=>d.event==='cancel'));
 

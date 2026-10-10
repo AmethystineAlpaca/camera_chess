@@ -84,6 +84,58 @@ class CorrectionLogTests(unittest.TestCase):
         return dict(session=snapshot['session'], position_token=snapshot['position_token'],
                     correction_id=snapshot['correction_id'],changes={'h1':'R','b2':'.'})
 
+    def test_crf_correction_rolls_back_automatically_and_keeps_raw_evidence(self):
+        from crf_observation import CRFObservation
+        from test_crf_integration import reading
+        g = self.game
+        g.postprocessor = CRFObservation(); g.reset(aligned=True); g.state = 'player_turn'
+        moved = g.board.copy(); moved.push_uci('e2e4')
+        jpeg = (self.root/'latest.bin').read_bytes().split(b'\n',1)[1]
+        with patch('chess_game.threading.Thread'):
+            for i in range(4):
+                record = reading(moved, i, ('a2', 'B')); record['capture_time'] = time.time()
+                g.observe(record, i*.3, record['capture_time'])
+                self.audit.observe(g, record, jpeg)
+        self.assertEqual(len(g.history), 1)
+        snapshot = self.opened()
+        self.assertTrue(g.editing_correction())
+        self.assertEqual(snapshot['observed_placement'], moved.board_fen())
+        self.assertNotEqual(snapshot['raw_placement'], moved.board_fen())
+        # The asynchronous engine result must not invalidate the user's draft.
+        g.pending = chess.Move.from_uci('e7e5'); g.state = 'computer_move'
+        data = dict(session=g.id, position_token=snapshot['position_token'],
+                    correction_id=snapshot['correction_id'], changes={'e4': '.', 'e2': 'P'})
+        status, after = self.post('/api/correct-squares', data)
+        self.assertEqual(status, 200, after)
+        self.assertEqual(after['fen'], chess.STARTING_FEN)
+        self.assertIsNone(after['pending'])
+        self.assertFalse(g.editing_correction())
+        directory = self.audit.directory(snapshot['correction_id'])
+        pair = json.loads((directory/'pair.json').read_text())
+        self.assertTrue(pair['complete'])
+        self.assertEqual(set(pair['edits']), {'e4', 'e2'})
+        self.assertEqual(pair['annotation_scope'], 'edited_squares_only')
+        raw_after = chess.Board(pair['after'] + ' w - - 0 1')
+        self.assertEqual(raw_after.piece_at(chess.A2).symbol(), 'B')
+        self.assertEqual(g.board.piece_at(chess.A2).symbol(), 'P')
+        self.assertEqual(json.loads((directory/'recognition.json').read_text()), record)
+        with patch.object(g, 'correct_squares', side_effect=AssertionError('duplicate apply')):
+            self.assertEqual(self.post('/api/correct-squares', data)[0], 200)
+
+    def test_crf_editor_cancel_and_reopen_preserve_frozen_snapshot(self):
+        from crf_observation import CRFObservation
+        self.game.postprocessor = CRFObservation()
+        opened = self.opened()
+        data = dict(session=self.game.id, correction_id=opened['correction_id'])
+        self.assertTrue(self.game.editing_correction())
+        self.assertEqual(self.post('/api/end-correction', data)[0], 200)
+        self.assertFalse(self.game.editing_correction())
+        status, reopened = self.post('/api/correction-context', data)
+        self.assertEqual(status, 200)
+        self.assertEqual(reopened['recognition_frame'], opened['recognition_frame'])
+        self.assertEqual(reopened['correction_id'], opened['correction_id'])
+        self.assertTrue(self.game.editing_correction())
+
     def test_batch_keeps_original_frame_and_retry_is_idempotent(self):
         snapshot = self.opened()
         directory = self.audit.directory(snapshot['correction_id'])

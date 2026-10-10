@@ -29,6 +29,8 @@ venv/
 .pytest_cache/
 .coverage
 htmlcov/
+# Downloaded and generated CRF datasets; provenance and builders live in docs/scripts.
+data/crf/
 *.log
 *.tmp
 *.bak

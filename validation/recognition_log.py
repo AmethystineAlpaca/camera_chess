@@ -93,6 +93,12 @@ class RecognitionLog:
                      camera_phase=game.camera_phase, visual_status=game.visual_status,
                      orientation=game.orientation_status, errors=list(game.errors),
                      corrections=dict(game.manual_corrections), message=game.message)
+        review = getattr(game, 'crf_result', None)
+        if review:
+            state['recognition_postprocess'] = {k: review.get(k) for k in ('status', 'placement', 'operation', 'context')}
+        decision = getattr(game, 'crf_last_decision', None)
+        if decision and decision['frame'] == game.raw_frame:
+            state['recognition_decision'] = {k: decision.get(k) for k in ('placement', 'operation', 'reference_fen', 'context')}
         if state != self.last_state:
             self.event('state_changed', **state,
                        sequence=record.get('sequence') if record else None,
@@ -182,6 +188,9 @@ class RecognitionLog:
         self.event('correction_apply_requested', id=identity, attempt=attempt, changes=data.get('changes'))
         return True
 
+    def opened(self, identity):
+        return json.loads((self.directory(identity)/'opened.json').read_text())
+
     def finish(self, identity, changes, after):
         directory = self.directory(identity)
         result = self.completed.get(identity) or dict(time=time.time(), changes=changes, after=after)
@@ -220,7 +229,8 @@ class RecognitionLog:
         write_json(directory/'pair.json', dict(schema_version=2, source=context.get('source'),
             complete=source_ok, before=original.board_fen(), after=corrected.board_fen(),
             edits={s: dict(before=symbol_at(original,s), after=p) for s,p in changes.items()},
-            annotation_scope='edited_squares_only', unchanged_squares='copied_from_original_model_output'))
+            annotation_scope='edited_squares_only', unchanged_squares='copied_from_original_model_output',
+            recognition_postprocess=opened.get('recognition_postprocess')))
         write_json(directory/'changes.json', dict(changes=changes, reviewed_before=opened['observed_placement'],
             reviewed_after=reviewed.board_fen(), raw_before=opened['raw_placement'], actual_after=after['observed_placement']))
         self.report(directory, changes)
