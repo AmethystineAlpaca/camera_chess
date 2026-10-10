@@ -14,6 +14,7 @@ from camera_session import CameraSession
 from app_lifecycle import LauncherLease, BrowserPresence
 from saved_games import SavedGames
 from recognition_log import RecognitionLog, read_observation
+from crf_observation import CRFObservation
 
 R = Path(__file__).resolve().parents[1]
 D = R/'validation/frames/lite-live'
@@ -33,7 +34,8 @@ for path in candidates:
         break
     except Exception as exc:
         print('Engine launch failed:', exc, flush=True)
-game = Game(engine, R/'validation/game-state.json')
+game = Game(engine, R/'validation/game-state.json',
+            postprocessor=CRFObservation() if os.environ.get('CHESS_CRF', '1') != '0' else None)
 game.reset(computer='auto')
 library = SavedGames(R/'validation/saved-games', R/'validation/game-state.json')
 launcher_lease = LauncherLease()
@@ -159,7 +161,7 @@ class Handler(SimpleHTTPRequestHandler):
             return
         actions = {'/api/pause':game.pause,'/api/resume':game.resume,'/api/undo':game.undo_round,
                    '/api/claim-draw':game.claim_draw,'/api/clear-corrections':game.clear_corrections}
-        if self.path not in (*actions,'/stop','/api/new-game','/api/start-game','/api/exit-game','/api/load-saved','/api/correction-context','/api/diagnostics','/api/correct-square','/api/correct-squares','/api/save-game','/api/delete-game','/api/load-game','/api/resume-game','/api/start-endgame','/api/confirm-endgame','/api/confirm-promotion','/api/quit-app','/api/launcher-heartbeat','/api/page-heartbeat','/api/page-leave','/api/browser-entry'):
+        if self.path not in (*actions,'/stop','/api/new-game','/api/start-game','/api/exit-game','/api/load-saved','/api/correction-context','/api/end-correction','/api/diagnostics','/api/correct-square','/api/correct-squares','/api/save-game','/api/delete-game','/api/load-game','/api/resume-game','/api/start-endgame','/api/confirm-endgame','/api/confirm-promotion','/api/quit-app','/api/launcher-heartbeat','/api/page-heartbeat','/api/page-leave','/api/browser-entry'):
             self.send_error(404)
             return
         try:
@@ -168,6 +170,12 @@ class Handler(SimpleHTTPRequestHandler):
                 identity = data.get('page')
                 if not isinstance(identity,str) or not 1 <= len(identity) <= 100:
                     raise ValueError('Invalid page identity.')
+                with game.lock:
+                    if data.get('session') == game.id and data.get('correction_id'):
+                        if self.path == '/api/page-leave':
+                            game.end_correction(data['correction_id'])
+                        else:
+                            game.touch_correction(data['correction_id'])
                 if self.path == '/api/page-leave':
                     browser_presence.leave(identity)
                     self.respond({'left':True})
@@ -230,12 +238,23 @@ class Handler(SimpleHTTPRequestHandler):
                 elif self.path == '/api/confirm-promotion':
                     game.confirm_promotion(data.get('promotion_id'),data.get('piece'),data.get('representation'))
                     self.respond(game.snapshot(time.time()))
+                elif self.path == '/api/end-correction':
+                    game.end_correction(data.get('correction_id'))
+                    self.respond({'closed':True})
                 elif self.path == '/api/correction-context':
                     snapshot = game.snapshot(time.time())
                     if not snapshot['fresh'] or not snapshot['raw_placement']:
                         raise ValueError('Wait for a live camera image before correcting the board.')
-                    snapshot = audit.reviewed_view(data,snapshot)
-                    identity, missing = audit.open(snapshot)
+                    if data.get('correction_id'):
+                        identity = data['correction_id']
+                        snapshot = audit.opened(identity)
+                        if snapshot['session'] != game.id:
+                            raise ValueError('The game changed. Reopen Fix recognition.')
+                        missing = json.loads((audit.directory(identity)/'context.json').read_text())['missing_evidence']
+                    else:
+                        snapshot = audit.reviewed_view(data,snapshot)
+                        identity, missing = audit.open(snapshot)
+                    game.begin_correction(identity,snapshot['position_token'])
                     self.respond(dict(snapshot, correction_id=identity, evidence_warning=bool(missing)))
                 elif self.path == '/api/correct-square':
                     game.correct_square(data.get('square'),data.get('piece'),data.get('seen'))
@@ -246,7 +265,10 @@ class Handler(SimpleHTTPRequestHandler):
                     if identity is None:
                         raise ValueError('This page has no original recognition snapshot. Reload the page and review the board before applying corrections.')
                     if audit.prepare(identity,data,before):
-                        game.correct_squares(data.get('changes'),data.get('position_token'))
+                        if game.editing_correction() and game.correction_edit[0] != identity:
+                            raise ValueError('Another correction editor is active. Reopen this draft before applying it.')
+                        game.correct_squares(data.get('changes'),data.get('position_token'),audit.opened(identity)['observed_placement'])
+                        game.end_correction(identity)
                         after = game.snapshot(time.time())
                         try:
                             audit.finish(identity,data['changes'],after)
@@ -256,6 +278,7 @@ class Handler(SimpleHTTPRequestHandler):
                                 evidence_warning='Corrections applied, but some evidence could not be saved. Check disk space.'))
                             return
                     else:
+                        game.end_correction(identity)
                         try:
                             audit.recover(identity)
                         except OSError as exc:

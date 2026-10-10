@@ -1,5 +1,6 @@
 """Authoritative game state with explicit, temporary human observation corrections."""
 import threading
+from copy import deepcopy
 from collections import deque
 import shutil
 import json
@@ -138,10 +139,11 @@ def proxy_badges(svg, proxies):
     return ET.tostring(root, encoding='unicode')
 
 class Game:
-    def __init__(self, engine=None, save_path=None):
+    def __init__(self, engine=None, save_path=None, postprocessor=None):
         self.save_path = Path(save_path) if save_path else None
         self.save_error = None
         self.engine = engine
+        self.postprocessor = postprocessor
         self.lock = threading.RLock()
         self.reset()
 
@@ -182,6 +184,13 @@ class Game:
             self.latest_observed = None
             self.manual_corrections = {}
             self.correction_changes = {}
+            self.crf_version = 0
+            self.crf_result = None
+            self.crf_last_decision = None
+            self.recognition_checkpoints = []
+            self.correction_edit = None
+            if self.postprocessor is not None:
+                self.postprocessor.reset()
             self.gate = Consensus()
             self.fast_gate = Consensus(votes=3, span=.45, window=4, score_threshold=.90)
             self.return_gate = Consensus(votes=2, span=.25, window=3, score_threshold=.55)
@@ -313,9 +322,61 @@ class Game:
 
     def position_token(self):
         # Camera frames and message updates must not invalidate an editor draft.
-        return self.board.fen() + '|' + (self.pending.uci() if self.pending else '') + '|' + ','.join(map(str,sorted(self.proxies)))
+        pending = self.pending.uci() if self.pending and self.postprocessor is None else ''
+        return self.board.fen() + '|' + pending + '|' + ','.join(map(str,sorted(self.proxies)))
 
-    def correct_squares(self, changes, position_token):
+    def begin_correction(self, identity, position_token):
+        if position_token != self.position_token():
+            raise ValueError('The turn changed. Reopen Fix recognition to review the current board.')
+        if self.postprocessor is not None:
+            self.correction_edit = (identity, time.monotonic() + 20)
+            self.reset_votes()
+
+    def touch_correction(self, identity):
+        if self.correction_edit and self.correction_edit[0] == identity:
+            self.correction_edit = (identity, time.monotonic() + 20)
+
+    def end_correction(self, identity):
+        if self.correction_edit and self.correction_edit[0] == identity:
+            self.correction_edit = None
+            self.reset_votes()
+
+    def editing_correction(self):
+        if self.correction_edit and time.monotonic() >= self.correction_edit[1]:
+            self.end_correction(self.correction_edit[0])
+        return self.correction_edit is not None
+
+    def restore_recognition_reference(self, observed):
+        """Undo recent inferred moves if the edited board belongs to their source."""
+        if self.strict_recovery or self.state == 'paused':
+            return False
+        placement = observed.board_fen()
+        if (placement == self.physical().board_fen() or
+                legal_successor(self.board, observed, self.proxies) is not None):
+            return False
+        for i in range(len(self.recognition_checkpoints) - 1, -1, -1):
+            checkpoint = self.recognition_checkpoints[i]
+            board, proxies = checkpoint['board'], checkpoint['proxies']
+            if (placement != physical_board(board, proxies).board_fen() and
+                    legal_successor(board, observed, proxies) is None):
+                continue
+            self.board = board.copy()
+            self.proxies = set(proxies)
+            self.history = deepcopy(checkpoint['history'])
+            self.pending = checkpoint['pending']
+            self.state = 'computer_move' if self.pending else 'player_turn'
+            self.resume_state = None
+            self.engine_job = None  # Discard any reply computed for the mistaken position.
+            self.thinking_since = None
+            self.promotion = None
+            self.partial_since = None
+            self.recognition_checkpoints = self.recognition_checkpoints[:i]
+            self.clear_errors()
+            self.emit(instruction(self.board, self.pending, self.proxies) if self.pending else 'Recognition corrected. Your turn.', force=True)
+            return True
+        return False
+
+    def correct_squares(self, changes, position_token, reviewed_placement=None):
         """Apply a reviewed draft atomically, even if the classifier jitters."""
         with self.lock:
             if position_token != self.position_token():
@@ -326,14 +387,28 @@ class Game:
                 raise ValueError('Choose a valid square and piece.')
             if self.raw_observed is None or time.time()-self.last_frame > 3 or self.camera_phase in ('stale','stopped','loading','waiting'):
                 raise ValueError('Camera disconnected. Your edits are kept; reconnect and apply again.')
+            # Use the exact postprocessed board shown in the editor. Raw labels
+            # stay separate, both for evidence and for the legacy path.
+            reviewed = chess.Board(reviewed_placement + ' w - - 0 1') if reviewed_placement else (
+                self.observed.copy() if self.observed is not None else self.raw_observed.copy())
+            for name, symbol in changes.items():
+                reviewed.set_piece_at(chess.parse_square(name), None if symbol == '.' else chess.Piece.from_symbol(symbol))
             for name, symbol in changes.items():
                 piece = self.raw_observed.piece_at(chess.parse_square(name))
                 actual = piece.symbol() if piece else '.'
                 self.manual_corrections[name] = dict(seen=actual, piece=symbol,
                                                     occupancy_confirmed=(actual == '.') == (symbol == '.'))
                 self.correction_changes.pop(name, None)
-            self.latest_observed = self.corrected_observation(self.raw_observed)
+            self.latest_observed = reviewed if self.postprocessor is not None else self.corrected_observation(self.raw_observed)
             self.observed = self.latest_observed.copy()
+            if self.postprocessor is not None:
+                self.restore_recognition_reference(self.observed)
+                self.correction_edit = None
+                self.reset_votes()
+                # Applying the editor is explicit evidence of the physical
+                # state, not a request to classify the cause of an error.
+                self.accept_observation(self.observed)
+                return
             expected = self.physical_after(self.pending) if self.pending else self.physical()
             self.errors = differences(expected, self.observed)
             if not self.errors:
@@ -342,6 +417,7 @@ class Game:
 
 
     def reset_votes(self):
+        self.invalidate_crf()
         self.camera_phase = 'settling'
         self.last_supported = 0
         self.gate = Consensus()
@@ -427,6 +503,7 @@ class Game:
         return candidates[0] if len(candidates) == 1 else observed
 
     def clear_observations(self):
+        self.invalidate_crf()
         self.manual_corrections.clear()
         self.correction_changes.clear()
         self.raw_observed = None
@@ -452,6 +529,8 @@ class Game:
             if self.state != 'reconcile':
                 self.resume_state = self.state
             self.state = 'paused'
+            self.correction_edit = None
+            self.invalidate_crf()
             self.engine_job = None
             self.clear_errors()
             self.emit('Game paused. Keep the last accepted position, then click Resume.')
@@ -470,6 +549,8 @@ class Game:
                 raise ValueError('There is no accepted move to undo.')
             # Return to the position immediately before the most recent player move.
             self.engine_job = None
+            self.recognition_checkpoints = []
+            self.correction_edit = None
             while self.board.move_stack:
                 self.board.pop()
                 self.proxies = set(self.history.pop().get('proxies_before', ()))
@@ -620,6 +701,8 @@ class Game:
             observed = self.release_moved_corrections(self.raw_observed, observed, record)
             observed, tracked = self.tracked_observation(observed)
             self.latest_observed = observed.copy()
+            if self.observe_crf(record, observed, now):
+                return
             raw = observed.board_fen()
             scores = [record.get(k,0) for k in ('min_score','min_margin','change_score')]
             if not all(isinstance(v,(int,float)) and math.isfinite(v) for v in scores):
@@ -693,6 +776,79 @@ class Game:
             self.observed = observed
             if self.state != 'paused':
                 self.accept_observation(observed)
+
+    def crf_context(self):
+        return '|'.join((self.id, self.position_token(), self.pending.uci() if self.pending else '', self.state, str(self.crf_version)))
+
+    def invalidate_crf(self):
+        self.crf_version = getattr(self, 'crf_version', 0) + 1
+        self.crf_result = None
+        if self.postprocessor is not None:
+            self.postprocessor.reset()
+
+    def observe_crf(self, record, observed, now):
+        if self.postprocessor is None:
+            return False
+        if self.editing_correction():
+            self.crf_result = dict(status='editing', detail='Editing the recognized position.')
+            self.camera_phase = 'settling'
+            return True
+        reason = None
+        if self.state not in ('player_turn', 'computer_move', 'restore', 'reconcile', 'thinking', 'finished', 'engine_error'):
+            reason = 'Recognition assist starts after the initial position is confirmed.'
+        elif self.proxies or self.promotion:
+            reason = 'Using the existing promotion and substitute-piece recognition.'
+        elif self.strict_recovery or (not self.side_auto and not self.side_confirmed):
+            reason = 'Confirming the saved position and board direction first.'
+        elif any(observed.board_fen() == self.physical_after(m, True).board_fen() for m in self.promotion_moves()):
+            # A pawn kept on the last rank is a supported UI representation,
+            # but is outside the CRF's trained candidate set.
+            reason = 'Using the existing promotion confirmation.'
+        if reason:
+            self.crf_result = dict(status='bypassed', detail=reason)
+            self.postprocessor.reset()
+            return False
+        if self.side_auto and not self.observe_orientation(record, now, True):
+            # Auto orientation remains enabled throughout a normal game. Its
+            # fresh geometry evidence must gate CRF inference too, independently
+            # of the piece-label confidence that the CRF is meant to improve.
+            self.invalidate_crf()
+            self.crf_result = dict(status='uncertain', detail=self.orientation_detail)
+            self.camera_phase = 'orienting'
+            return True
+        if self.correction_changes:
+            self.invalidate_crf()
+            self.crf_result = dict(status='uncertain', detail='Waiting for a corrected piece to settle.')
+            self.camera_phase = 'uncertain'
+            return True
+        try:
+            result = self.postprocessor.step(self.board.fen(), self.crf_context(), record,
+                                             self.manual_corrections, now)
+        except (ValueError, TypeError, KeyError):
+            self.postprocessor.reset()
+            result = dict(status='uncertain', detail='Waiting for a complete view of the board.')
+        self.crf_result = result
+        status = result['status']
+        self.camera_phase = status if status in ('stable', 'settling') else 'uncertain'
+        if status != 'stable':
+            return True
+        physical = chess.Board(result['placement'] + ' w - - 0 1')
+        self.latest_observed = physical.copy()
+        self.last_supported = self.last_frame
+        self.crf_last_decision = dict(result, reference_fen=self.board.fen(), frame=self.raw_frame)
+        self.accept_observation(physical)
+        return True
+
+    def recognition_status(self, wall):
+        if self.postprocessor is None:
+            return None
+        result = dict(self.crf_result or dict(status='waiting', detail='Waiting for a camera reading.'))
+        if result.get('context') and result['context'] != self.crf_context():
+            result = dict(status='waiting', detail='Waiting for a reading of the current position.')
+        fresh = wall-self.last_frame < 3 and self.camera_phase not in ('stale', 'stopped', 'loading', 'waiting')
+        if not fresh:
+            result.update(status='waiting', detail='Wait for the camera to reconnect.')
+        return result
 
 
     def tracked_observation(self, observed):
@@ -956,6 +1112,8 @@ class Game:
 
     def accept_observation(self, observed):
         """Called only after stable, fresh temporal evidence."""
+        if self.editing_correction():
+            return
         self.observed = observed
         placement = observed.board_fen()
         if self.state in ('endgame_scan','endgame_ready'):
@@ -1088,6 +1246,11 @@ class Game:
             self.offer_corrections(observed)
 
     def commit(self, move, pawn_promotion=False):
+        if self.postprocessor is not None:
+            self.recognition_checkpoints.append(dict(board=self.board.copy(), history=deepcopy(self.history),
+                                                    proxies=set(self.proxies), pending=self.pending))
+            self.recognition_checkpoints = self.recognition_checkpoints[-8:]
+        self.invalidate_crf()
         before = self.physical()
         self.history.append({'san': self.board.san(move), 'uci': move.uci(),
                              'proxies_before': sorted(self.proxies), 'pawn_promotion': pawn_promotion})
@@ -1210,6 +1373,8 @@ class Game:
                 self.svg_cache_key = cache_key
             board_svg, expected_svg = self.svg_cache
             correction_board = self.corrected_observation(self.raw_observed) if self.raw_observed is not None else None
+            if self.postprocessor is not None and self.observed is not None:
+                correction_board = self.observed.copy()
             correction_svg = chess.svg.board(correction_board, orientation=orientation, size=680) if correction_board is not None else board_svg
             corrections = []
             for name in visible_errors:
@@ -1232,6 +1397,8 @@ class Game:
                         strict_recovery=self.strict_recovery, can_undo=bool(self.board.move_stack),
                         can_claim_draw=self.state=='player_turn' and not self.promotion and (self.board.is_repetition(3) or self.board.is_fifty_moves()),
                         manual_corrections=dict(self.manual_corrections),
+                        recognition_postprocess=self.recognition_status(wall),
+                        recognition_decision=deepcopy(self.crf_last_decision),
                         position_token=self.position_token(), pending_arrived=pending_arrived,
                         pending_target=self.physical_after(self.pending).board_fen() if self.pending else None,
                         correction_svg=correction_svg,
