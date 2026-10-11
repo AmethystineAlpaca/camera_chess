@@ -1,0 +1,119 @@
+{
+  "application_integrated": false,
+  "date": "2026-10-11",
+  "experimental": true,
+  "input": "Frozen recognizer probabilities (64x13) and supplied previous board; residual scoring over unchanged v1 candidates",
+  "models": {
+    "attention": {
+      "file": "attention.pt",
+      "frozen_v1_parameters": 25,
+      "selected_epoch": 11,
+      "sha256": "48a96cdf12166bf07eb099eb19394c0b90360906678af46e9aac211dd4bcb411",
+      "synthetic_validation_nll": 0.021180849563423546,
+      "trainable_parameters": 10324
+    },
+    "cnn": {
+      "file": "cnn.pt",
+      "frozen_v1_parameters": 25,
+      "selected_epoch": 9,
+      "sha256": "d8985b543fe69b71f736e37c000abcfdd61414d1e10ce383671f3cc05d40af58",
+      "synthetic_validation_nll": 0.03983468676581979,
+      "trainable_parameters": 8468
+    },
+    "feature_mlp": {
+      "file": "feature_mlp.pt",
+      "frozen_v1_parameters": 25,
+      "selected_epoch": 11,
+      "sha256": "4dcbb908bbb65a19288dea381b52b539dbd14d1a4e2418559af522d163326e5c",
+      "synthetic_validation_nll": 0.02603328646365553,
+      "trainable_parameters": 865
+    },
+    "move_mlp1": {
+      "file": "move_mlp1.pt",
+      "frozen_v1_parameters": 25,
+      "selected_epoch": 12,
+      "sha256": "6bc54a36614c84ed467c67222cde5623132c15e84cbeb7aca794bd568f5e5348",
+      "synthetic_validation_nll": 0.03716951095890254,
+      "trainable_parameters": 3221
+    },
+    "move_mlp2": {
+      "file": "move_mlp2.pt",
+      "frozen_v1_parameters": 25,
+      "selected_epoch": 11,
+      "sha256": "f1dea74b64402d8d6d34e52ebe69faf8f490471be798e8f2d29d6192c30abef8",
+      "synthetic_validation_nll": 0.029872305256593974,
+      "trainable_parameters": 4277
+    },
+    "square_mlp": {
+      "file": "square_mlp.pt",
+      "frozen_v1_parameters": 25,
+      "selected_epoch": 12,
+      "sha256": "8e403cd3c788b86781210d39ca1522eb643d6844a7cb4611b745d944332da2da",
+      "synthetic_validation_nll": 0.033173849359154704,
+      "trainable_parameters": 1716
+    }
+  },
+  "packaged_source_sha256": {
+    "evaluate_neural_postprocessors.py": "ec893080ed5b43e8f4b9e99e9d419b0272c60d180fe9f9debe85c268a0fe80b4",
+    "neural_postprocessor.py": "8a8940106047529cafed7fa7906c7dbad8da8241b48a0d3e4dccdeb5f0e34149",
+    "test_neural_postprocessor.py": "c838eb6d6a335d3fdd2a44cbd582caca15f561b96aa690a14bf4b4f888d001de",
+    "train_neural_postprocessors.py": "059f1dd74197c61bdae35a9b2a0eb4ce5df0ed26d7cf475c479c707dbaf0c5d1"
+  },
+  "schema": 1,
+  "source_provenance_note": "training_config.source_sha256 records the original run snapshots retained locally. Maintained trainer handles unrelated concurrent documentation edits without failing; evaluator wording was clarified. Scoring architectures and optimization protocol are unchanged.",
+  "training_config": {
+    "batch_size_transitions": 16,
+    "cache": "data/crf/runs/crf-v2-250-run1",
+    "cache_sha256": {
+      "candidate-coverage.json": "b215a0d65d4031dac765b39e8311068aa27a500ab620ec04dbf2caea5340c043",
+      "candidates.npz": "fa1453964d906e1d7fdb68af6e498303b8d243d0feb9cfabf5caf448e7bc79f4",
+      "probabilities.npy": "95dc504ac90fe2c134a9bce22afd8e2d5fb9e7c2330cf3009118469f883837d6"
+    },
+    "cpu_threads": 4,
+    "dataset": "data/crf/synthetic-v1",
+    "date": "2026-10-11",
+    "device": "cpu",
+    "epochs": 12,
+    "initialization": "frozen v1 plus zero-output residual; train residual only",
+    "learning_rate": 0.001,
+    "lr_decay_epochs": [
+      6,
+      9
+    ],
+    "lr_decay_factor": 0.3,
+    "models": [
+      "feature_mlp",
+      "square_mlp",
+      "move_mlp1",
+      "move_mlp2",
+      "cnn",
+      "attention"
+    ],
+    "numpy": "2.5.3",
+    "optimizer": "AdamW",
+    "photo_policy": "all architectures fixed before photo evaluation; no photo fitting or selection",
+    "profiles_per_transition": 10,
+    "protected_sha256": {
+      "docs/crf-experiment-log-2026-10-11-evaluation-issues.md": "a0cff1cb39f923b5048dfc4900b8de03cf10a2fdde90fcef81c3de1ec3f2da18",
+      "docs/crf-experiment-log.md": "519967c37f1263c8964285395ec37c26a354e65b916d4f70902a65090be23f45",
+      "research/models/crf-postprocessor-v1.json": "5b5b265f6399e6c600202cae5d8e165fd6bd9db2e3cf31e5c194229aaee827db",
+      "research/models/crf-postprocessor-v2-250.json": "e441f01ebc1c0d43907c676a751d5e8a38f3fc89fd9d2c23e22603509d4d804e"
+    },
+    "schema": 1,
+    "seed": 20261011,
+    "selection": "minimum synthetic validation NLL including epoch 0 (frozen v1)",
+    "smoke_limit": null,
+    "source_sha256": {
+      "crf_postprocessor.py": "66762339da45582718e9cc93560a3f3110f4dde86c9f6ac4748635f1f5fd0bf5",
+      "evaluate_crf_synthetic_previous.py": "25bce8ae35bd2e3ceff0f6f8da1da3619a27d821ab1c3932e4acb7f2042ed221",
+      "evaluate_neural_postprocessors.py": "942d0f6d55cfc9ccc1ffb20ab765c3d662c5b1e3696a2eeaa820c6658cdcd41c",
+      "neural_postprocessor.py": "8a8940106047529cafed7fa7906c7dbad8da8241b48a0d3e4dccdeb5f0e34149",
+      "train_crf.py": "30dc798639caed84ca9b4fd529724b8cffb42ae6f806e3013c80364e7e94ea25",
+      "train_neural_postprocessors.py": "c7a23aaf2ae52879d281c0bb2fa4c19c593a039186e10ace7721e57d81b3c53c"
+    },
+    "temporal_models": "not trained: existing examples do not contain measured video sequences",
+    "torch": "2.6.0",
+    "visual_model": "frozen; cached 64x13 probabilities only; no image network instantiated",
+    "weight_decay": 0.0001
+  }
+}

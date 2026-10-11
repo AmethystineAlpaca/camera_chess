@@ -9,7 +9,7 @@ import chess
 import numpy as np
 
 from chess_game import Game
-from crf_observation import CRFObservation, CLASSES, SQUARES
+from crf_observation import CRFObservation, CLASSES, SQUARES, MODELS, model_choices
 
 
 def reading(board, sequence, confuse=None):
@@ -34,6 +34,50 @@ def reading(board, sequence, confuse=None):
 
 
 class CRFIntegrationTests(unittest.TestCase):
+    def test_all_packaged_models_use_live_gate_and_manual_constraints(self):
+        board = chess.Board()
+        board.push_uci('e2e4')
+        for model in MODELS:
+            with self.subTest(model=model):
+                adapter = CRFObservation(model=model)
+                self.assertIsNone(adapter.error)
+                for i in range(4):
+                    result = adapter.step(chess.STARTING_FEN, 'turn', reading(board, i), {}, i * .3)
+                self.assertEqual(result['status'], 'stable')
+                self.assertEqual(result['move_uci'], 'e2e4')
+                result = adapter.step(chess.STARTING_FEN, 'next', reading(board, 5), {}, 2)
+                self.assertNotEqual(result['status'], 'stable')
+                result = adapter.step(chess.STARTING_FEN, 'next', reading(board, 6), {'e4': {'piece': 'k'}}, 2.3)
+                self.assertEqual(result['status'], 'uncertain')
+
+    def test_labels_match_published_evaluation(self):
+        import json
+        report = json.loads((Path(__file__).resolve().parents[1] / 'docs/evaluations/neural-postprocessors-20261011.json').read_text())
+        aliases = {'small': 'crf_v1_25', 'large': 'crf_v2_250'}
+        for choice in model_choices():
+            summary = report['summary_by_method'][aliases.get(choice['id'], choice['id'])]
+            self.assertIn(f"{summary['single_random_previous_exact_board_accuracy']:.2%} accuracy on evaluation set", choice['label'])
+
+    def test_both_models_recognize_move_with_fresh_votes(self):
+        board = chess.Board()
+        board.push_uci('e2e4')
+        for model, count in [('small', 25), ('large', 250)]:
+            with self.subTest(model=model):
+                adapter = CRFObservation(model=model)
+                self.assertIsNone(adapter.error)
+                self.assertEqual(len(adapter.weights), count)
+                for i in range(4):
+                    result = adapter.step(chess.STARTING_FEN, 'turn', reading(board, i), {}, i * .3)
+                self.assertEqual(result['status'], 'stable')
+                self.assertEqual(result['move_uci'], 'e2e4')
+                adapter.reset()
+                result = adapter.step(chess.STARTING_FEN, 'turn', reading(board, 5), {}, 2)
+                self.assertNotEqual(result['status'], 'stable')
+
+    def test_invalid_model_is_rejected(self):
+        with self.assertRaises(ValueError):
+            CRFObservation(model='unknown')
+
     def game(self, fen=chess.STARTING_FEN):
         g = Game(object(), postprocessor=CRFObservation())
         self.assertIsNone(g.postprocessor.error)

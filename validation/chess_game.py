@@ -1387,6 +1387,7 @@ class Game:
                         in_check=self.board.is_check(),
                         events=list(self.events), event_kind=self.event_kind, computer='white' if self.computer else 'black',
                         player='black' if self.computer else 'white', difficulty=self.difficulty,
+                        recognition_model=getattr(self.postprocessor, 'model', None),
                         side_auto=self.side_auto, side_known=self.side_confirmed, orientation_status=self.orientation_status,
                         orientation_detail=self.orientation_detail, detected_near=self.detected_near, original_near=self.original_near, needs_orientation=self.side_auto and (self.state in ('setup','endgame_scan','endgame_ready') or not self.side_confirmed),
                         aligned=self.aligned, fresh=wall-self.last_frame<3 and self.camera_phase not in ('stale','stopped','loading','waiting'),
