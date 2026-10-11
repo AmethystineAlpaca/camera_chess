@@ -15,6 +15,7 @@ import uuid
 
 import chess
 import chess.svg
+from improvement_log import dated_id
 
 
 def read_frame(path):
@@ -35,7 +36,38 @@ def read_observation(directory):
     return record, None
 
 
+class MemoryEvidence:
+    """Ephemeral correction drafts when optional data recording is disabled."""
+    def __init__(self, files=None, name=''):
+        self.files = files if files is not None else {}
+        self.name = name
+    def __truediv__(self, name):
+        return MemoryEvidence(self.files, name)
+    @property
+    def suffix(self):
+        return Path(self.name).suffix
+    def with_suffix(self, suffix):
+        return MemoryEvidence(self.files, str(Path(self.name).with_suffix(suffix)))
+    def write_bytes(self, data):
+        self.files[self.name] = data
+    def write_text(self, text):
+        self.write_bytes(text.encode())
+    def read_bytes(self):
+        if self.name not in self.files:
+            raise FileNotFoundError(self.name)
+        return self.files[self.name]
+    def read_text(self):
+        return self.read_bytes().decode()
+    def exists(self):
+        return self.name in self.files
+    def replace(self, target):
+        target.write_bytes(self.files.pop(self.name))
+
+
 def write_json(path, value):
+    if isinstance(path, MemoryEvidence):
+        path.write_text(json.dumps(value, ensure_ascii=False, indent=2))
+        return
     temporary = path.with_suffix('.tmp')
     with temporary.open('w') as stream:
         json.dump(value, stream, ensure_ascii=False, indent=2)
@@ -67,8 +99,12 @@ class RecognitionLog:
         self.views = OrderedDict()
         self.frame_bytes = 0
         self.completed = {}
+        self.data_logging = True
+        self.memory_archives = OrderedDict()
 
     def event(self, kind, **fields):
+        if not self.data_logging:
+            return
         self.logger.info(json.dumps(dict(time=time.time(), type=kind, **fields), ensure_ascii=False))
 
     def problem(self, error):
@@ -134,17 +170,31 @@ class RecognitionLog:
         return deepcopy(snapshot)
 
     def directory(self, identity):
-        if not isinstance(identity, str) or not re.fullmatch(r'[0-9a-f]{32}', identity):
+        if not isinstance(identity, str) or not re.fullmatch(r'(?:[0-9a-f]{32}|[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}-[0-9]{2}\.[0-9]{6}[+-][0-9]{4}_correction_[0-9a-f]{12})', identity):
             raise ValueError('Reopen Fix recognition to capture a new snapshot.')
+        if identity in self.memory_archives:
+            return self.memory_archives[identity]
         directory = self.root/identity
         if not directory.is_dir():
             raise ValueError('Correction snapshot is missing. Reopen Fix recognition.')
+        if not self.data_logging:
+            directory = MemoryEvidence({p.name:p.read_bytes() for p in directory.iterdir() if p.is_file()})
+            self.remember_memory(identity, directory)
         return directory
 
+    def remember_memory(self, identity, directory):
+        self.memory_archives[identity] = directory
+        while len(self.memory_archives) > 16:
+            self.memory_archives.popitem(last=False)
+
     def open(self, snapshot):
-        identity = uuid.uuid4().hex
+        identity = dated_id('correction')
         directory = self.root/identity
-        directory.mkdir()
+        if self.data_logging:
+            directory.mkdir()
+        else:
+            directory = MemoryEvidence()
+            self.remember_memory(identity, directory)
         write_json(directory/'opened.json', snapshot)
         missing = []
         frame = snapshot.get('recognition_frame')
@@ -264,7 +314,8 @@ class RecognitionLog:
             missing = ['Evidence manifest unavailable']
         warning = ('Corrections applied, but some evidence could not be saved. Check disk space.' if not report else
                    'Corrections applied and recorded. Some camera snapshots were unavailable.' if missing else None)
-        return dict(correction_id=identity, evidence_warning=warning, evidence_report=report)
+        return dict(correction_id=identity, evidence_warning=warning, evidence_report=report,
+                    evidence_persisted=not isinstance(directory, MemoryEvidence))
 
     def report(self, directory, changes):
         cards = []

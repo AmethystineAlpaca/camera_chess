@@ -1,0 +1,2 @@
+# Optional experiment. Do not install alongside another cv2 wheel provider.
+opencv-contrib-python==4.10.0.84

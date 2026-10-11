@@ -319,9 +319,11 @@ class CRFIntegrationTests(unittest.TestCase):
             self.assertFalse(g.recognition_checkpoints)
             self.assertIsNone(g.correction_edit)
 
-    def test_proxy_and_saved_position_recovery_bypass_crf(self):
+    def test_proxy_uses_physical_scoring_and_saved_recovery_remains_strict(self):
         g = self.game(); g.proxies = {chess.A2}
-        self.assertEqual(self.feed(g, g.physical())['recognition_postprocess']['status'], 'bypassed')
+        result = self.feed(g, g.physical())['recognition_postprocess']
+        self.assertEqual(result['status'], 'stable')
+        self.assertEqual(result['scorer'], 'physical_visual_likelihood')
         g = self.game(); g.strict_recovery = True; g.state = 'reconcile'; g.resume_state = 'player_turn'
         self.assertEqual(self.feed(g, g.board, count=1)['recognition_postprocess']['status'], 'bypassed')
 

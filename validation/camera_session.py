@@ -57,9 +57,10 @@ class CameraSession:
                         os.killpg(process.pid, signal.SIGTERM)
                     except ProcessLookupError:
                         pass
-            for process in self.workers:
+            for index, process in enumerate(self.workers):
                 try:
-                    process.wait(timeout=2)
+                    # The inference worker flushes its bounded local-evidence queue.
+                    process.wait(timeout=6 if index == 1 else 2)
                 except subprocess.TimeoutExpired:
                     try:
                         os.killpg(process.pid, signal.SIGKILL)

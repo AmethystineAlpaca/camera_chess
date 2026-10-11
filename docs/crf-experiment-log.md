@@ -312,7 +312,7 @@ Evaluated raw predictions, fixed candidate scoring, and v1/v2 CRFs on 176 photos
 
 ## E13 — User playtest feedback and proposed live-data collection (2026-10-11)
 
-The user reported generally correct accepted positions with little need for correction, but delayed recognition in sparse endgames, sometimes resolved by tilting the board. This is qualitative feedback; the cause remains unverified. A [collection and labeling plan](live-data-collection-plan.md) records the proposed evidence, review workflow and acceptance checks. Collection remains planning only.
+The user reported generally correct accepted positions with little need for correction, but delayed recognition in sparse endgames, sometimes resolved by tilting the board. This is qualitative feedback; the cause remains unverified. A [collection and labeling plan](live-data-collection-plan.md) records the proposed evidence, review workflow and acceptance checks. Collection implementation is recorded in E15; physical-camera pilot measurements and training remain pending.
 
 ## E14 — Neural postprocessors and model selection (2026-10-11)
 
@@ -321,3 +321,9 @@ Trained six postprocessors on the existing synthetic train/validation split, kee
 A simple one-board timing comparison measured about 8–10 ms for candidate generation and scoring across all eight models; see the [latency table and measurement scope](crf-real-photo-synthetic-previous-evaluation.md#single-board-latency-comparison).
 
 Settings → **Recognition Model** now selects one of two CRFs or six neural postprocessors, always combined with ChessQ Lite V4. Changes apply immediately and are saved locally. The default is the two-layer changed-square MLP, based on the highest one-predecessor photo point estimate, not a validated live-video advantage. Switching clears prior consensus before accepting fresh observations.
+
+## E15 — Optional local evidence recording (2026-10-11)
+
+Implemented the conservative collection portion of E13: exact producer-side images/probabilities, separately linked pre/post controller decisions, selected checkpoint and actual scorer, color/turn/physical-proxy context, failed/held observations, sampled camera context and correction events. Settings defaults to local recording and includes a persistent opt-out plus Open Log Folder. Date/time filenames include an offset and short suffix. Bounded asynchronous writers share a conservative 20 GiB budget, stop on write failures and never evict existing evidence. Disabling also makes correction drafts RAM-only.
+
+Predictions remain unverified. Offline checksum/pairing audit, image gallery, explicit per-image labels and guarded export are described in [local improvement data](local-improvement-data.md). Partial edits do not certify whole boards. No automatic backward labeling, training, upload or accuracy claim. Real camera/storage overhead and annotation quality still need the planned pilot; sampled context is not uninterrupted video.

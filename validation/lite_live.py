@@ -13,7 +13,9 @@ from chessqueries.models.checkpoint import load_safetensors_model
 from chessqueries.data.transforms import build_transform
 from chessqueries.core import Board, Piece
 from lite_consensus import Consensus
+from improvement_log import InferenceEvidence
 from board_orientation import forward_with_geometry,infer_orientation
+from board_rectification import BoardRectifier, preview_packet
 D=R/'validation/frames/lite-live';O=R/'validation/results/lite-live';O.mkdir(exist_ok=True)
 def write(name,value):
  p=O/name;t=p.with_name(p.name+'.tmp');t.write_text(value);os.replace(t,p)
@@ -25,6 +27,8 @@ signal.signal(signal.SIGTERM,lambda *_:globals().update(running=False))
 previous_status={}
 write('status.json',json.dumps(dict(phase='loading',detail='Loading recognition model',updated=time.time(),confirmed=previous_status.get('confirmed'),confirmed_at=previous_status.get('confirmed_at'))))
 torch.set_num_threads(4);model=load_safetensors_model(R/'research/models/chessq-lite.safetensors',device='mps').float();transform=build_transform(644,train=False)
+evidence=InferenceEvidence(O/'data-log-control.json', D/'latest.bin', R/'research/models/chessq-lite.safetensors')
+rectifier=BoardRectifier(R/'validation/recognition-settings.json');input_mode=None
 last=-1;confirmed=None;confirmed_at=None;processed=0;times=[]
 gate=Consensus(confirmed);last_raw=None
 log=logging.getLogger('camera-events');log.setLevel(logging.INFO)
@@ -39,7 +43,26 @@ with torch.inference_mode():
   if time.time()-ts>3:
    write('status.json',json.dumps(dict(phase='stale',detail='Camera feed interrupted. Retaining the last recognized position.',updated=time.time(),capture_time=ts,confirmed=confirmed,confirmed_at=confirmed_at)));time.sleep(.2);continue
   if seq==last:time.sleep(.025);continue
-  last=seq;t=time.perf_counter();rgb=decode_image(torch.frombuffer(bytearray(j),dtype=torch.uint8),mode=ImageReadMode.RGB).float();x=transform(rgb).unsqueeze(0).to('mps')
+  try:recognition_paused=json.loads((O/'orientation-control.json').read_text()).get('recognition_paused',False)
+  except (OSError,ValueError):recognition_paused=False
+  t=time.perf_counter()
+  model_jpeg,rectification=rectifier.process(j,ts)
+  if rectification['enabled']:
+   write('perspective-preview.json',preview_packet(j,model_jpeg,rectification,seq,ts))
+  mode=(rectification['enabled'],rectification['applied'])
+  if mode!=input_mode:gate=Consensus(confirmed);input_mode=mode
+  if recognition_paused:
+   last=seq
+   image_write('live.jpg',j)
+   try:
+    preview=json.loads((O/'status.json').read_text())
+    preview.update(sequence=seq,capture_time=ts,updated=time.time(),recognition_paused=True,rectification=rectification)
+    write('status.json',json.dumps(preview))
+   except (OSError,ValueError):pass
+   time.sleep(.025)
+   continue
+  log_control=evidence.writer.control()
+  last=seq;rgb=decode_image(torch.frombuffer(bytearray(model_jpeg),dtype=torch.uint8),mode=ImageReadMode.RGB).float();x=transform(rgb).unsqueeze(0).to('mps')
   try:needs_orientation=json.loads((O/'orientation-control.json').read_text()).get('needs_orientation',True)
   except (OSError,ValueError):needs_orientation=True
   orientation=None
@@ -66,12 +89,15 @@ with torch.inference_mode():
   # jitter without hiding a confidently empty square or a replacement piece.
   record['square_probabilities']={chess.square_name(chess.square(i%8,7-i//8)):{Piece(k).symbol:float(p) for k,p in enumerate(row)} for i,row in enumerate(probs.tolist())}
   record['camera_metadata']=metadata
+  record['rectification']=rectification
   record['model']='chessq-lite.safetensors'
   record['input_size']=644
   if orientation is not None:record.update(orientation=orientation,orientation_at=ts)
-  # Keep the exact classifier input and result together for correction evidence.
+  evidence.observation(record,j,log_control)
+  # Keep the source frame, transformation metadata and result together for correction evidence.
   image_write('observation.bin',json.dumps(record,ensure_ascii=False).encode()+b'\n'+j)
   write('status.json',json.dumps(record,ensure_ascii=False));
   if fen!=last_raw:write('raw.svg',svg(fen));last_raw=fen
-  image_write('live.jpg',j);log.info(json.dumps(record))
+  image_write('live.jpg',j);log.info(json.dumps({k:record.get(k) for k in ('phase','sequence','capture_time','seconds')}))
+evidence.close()
 write('status.json',json.dumps(dict(phase='stopped',detail='Camera session stopped',updated=time.time(),confirmed=confirmed,confirmed_at=confirmed_at),ensure_ascii=False));handler.close();print('STOPPED',flush=True)

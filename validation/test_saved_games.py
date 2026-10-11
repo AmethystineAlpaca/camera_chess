@@ -103,12 +103,15 @@ class SavedGameTests(unittest.TestCase):
             self.assertFalse(legacy.exists());self.assertEqual(library.list(),[])
 
     def scan(self):
-        g=Game(object());g.start_endgame()
+        g=Game(object())
+        with patch('chess_game.time.time',return_value=100):g.start_endgame()
         b=chess.Board('8/8/4k3/8/8/3K4/3P4/8 w - - 0 1')
         for i in range(5):
             t=100+i*.4
             g.observe(dict(raw=b.board_fen(),capture_time=t,sequence=i,min_score=.99,min_margin=.9,change_score=.99,phase='stable',
                 orientation={'status':'detected','near':'black'},orientation_at=t),i*.4,t)
+        self.assertEqual(g.state,'endgame_scan')
+        g.snapshot(110)
         self.assertEqual(g.state,'endgame_ready')
         return g,b
 
@@ -120,6 +123,33 @@ class SavedGameTests(unittest.TestCase):
         h=Game(object());h.load_data(g.serialize(),strict=True)
         self.assertEqual(h.board.fen(),g.board.fen());self.assertEqual(h.mode,'endgame')
         self.assertFalse(h.side_auto)
+
+    def test_frozen_board_ignores_camera_and_keeps_corrections(self):
+        g,b=self.scan()
+        g.accept_observation(chess.Board())
+        self.assertEqual(g.board.board_fen(),b.board_fen())
+        g.observe(dict(raw=chess.STARTING_BOARD_FEN,capture_time=200,sequence=99),99,200)
+        self.assertEqual(g.board.board_fen(),b.board_fen())
+        g.correct_squares({'d2':'.'},g.position_token(),b.board_fen())
+        self.assertIsNone(g.board.piece_at(chess.D2))
+        self.assertEqual(g.state,'endgame_ready')
+        g.accept_observation(b)
+        self.assertIsNone(g.board.piece_at(chess.D2))
+
+    def test_setup_corrections_survive_start_with_same_rules_as_live_play(self):
+        g,b=self.scan()
+        raw = b.copy(); raw.remove_piece_at(chess.D3)
+        g.raw_observed = raw.copy()
+        g.correct_squares({'d3':'K'},g.position_token(),raw.board_fen())
+        self.assertEqual(g.raw_observed.board_fen(),raw.board_fen())
+        self.assertEqual(g.manual_corrections['d3']['seen'],'.')
+        g.confirm_endgame(g.board.board_fen(),'white','white')
+        self.assertEqual(g.state,'player_turn')
+        record = dict(min_score=.99, square_probabilities={'d3':{'.':.99,'K':.01}})
+        for i in range(5):
+            corrected = g.corrected_observation(raw,record,i*.3)
+        self.assertEqual(corrected.piece_at(chess.D3),chess.Piece(chess.KING,chess.WHITE))
+        self.assertIn('d3',g.manual_corrections)
 
     def test_endgame_chooses_black_to_move(self):
         g,b=self.scan()
@@ -137,6 +167,8 @@ class SavedGameTests(unittest.TestCase):
 
     def test_endgame_cannot_confirm_without_both_kings(self):
         g=Game(object());g.start_endgame();g.accept_observation(chess.Board('8/8/8/8/8/8/8/4K3 w - - 0 1'))
-        self.assertEqual(g.state,'endgame_scan');self.assertIn('Both kings',g.message)
+        g.finish_endgame_scan(g.endgame_scan_deadline)
+        self.assertEqual(g.state,'endgame_ready')
+        with self.assertRaisesRegex(ValueError,'not legal'):g.confirm_endgame(g.board.board_fen(),'white','white')
 
 if __name__=='__main__':unittest.main()

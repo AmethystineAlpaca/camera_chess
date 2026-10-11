@@ -40,3 +40,13 @@ data/crf/
 credentials*.json
 
 validation/recognition-settings.json
+
+# Local camera evidence for optional future improvements (never uploaded).
+validation/improvement-logs/
+
+# Optional perspective preview assets.
+!validation/results/lite-live/board-perspective.js
+!validation/results/lite-live/board-perspective.css
+
+# Raw screen recordings; publish reviewed exports under docs/media instead.
+*.mov

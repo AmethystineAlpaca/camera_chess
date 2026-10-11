@@ -20,6 +20,21 @@ const base={recognition_frame:[17,1234.5],session:'crf-test',position_token:'sam
   recognition_postprocess:{status:'stable',operation:'legal_move'}};
 const show=g=>{context.fixture=g;run('playing=true;show(fixture)')};
 (async()=>{
+  assert.ok(html.includes('id="log-data" checked'));
+  assert.ok(html.includes('never sent automatically'));
+  context.fetch=async()=>({ok:true,json:async()=>({recognition_model:'small',log_data:true,data_logging:{enabled:true}})});
+  await run('openSettings()');assert.equal(el('#log-data').checked,true);
+  let logRequest;
+  context.fetch=async(path,options)=>{logRequest={path,data:JSON.parse(options.body)};return {ok:true,json:async()=>({log_data:false,data_logging:{enabled:false}})}};
+  el('#log-data').checked=false;await el('#log-data').onchange();
+  assert.equal(logRequest.data.log_data,false);assert.equal(el('#log-data').checked,false);
+  context.fetch=async()=>({ok:false,json:async()=>({error:'Disk unavailable'})});
+  el('#log-data').checked=true;await el('#log-data').onchange();
+  assert.equal(el('#log-data').checked,false);assert.equal(el('#log-data-feedback').textContent,'Disk unavailable');
+  context.fetch=async(path)=>{logRequest={path};return {ok:true,json:async()=>({opened:true})}};
+  await el('#open-data-folder').onclick();assert.equal(logRequest.path,'/api/open-data-folder');
+  run("displayDataLogging({data_logging:{enabled:true,stopped_reason:'Budget reached'}})");
+  assert.equal(el('#data-log-warning').hidden,false);assert.match(el('#data-log-warning').textContent,/Budget reached/);
   const choices=['small','large','feature_mlp','square_mlp','move_mlp1','move_mlp2','cnn','attention'].map(id=>({id,label:id+' (71.02% accuracy on evaluation set)'}));
   context.fetch=async()=>({ok:true,json:async()=>({recognition_model:'small',recognition_models:choices})});
   await run('openSettings()');

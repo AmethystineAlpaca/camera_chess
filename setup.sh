@@ -13,6 +13,10 @@ if [ ! -x research/edgetam-env/bin/python ]; then
   "$PYTHON" -m venv research/edgetam-env
   research/edgetam-env/bin/python -m pip install -e research/chessqueries
 fi
+# Optional perspective experiment; avoid installing a second cv2 distribution.
+if ! research/edgetam-env/bin/python -c 'import cv2; assert hasattr(cv2, "findChessboardCornersSBWithMeta")' 2>/dev/null; then
+  research/edgetam-env/bin/python -m pip install -r validation/rectification-requirements.txt
+fi
 research/edgetam-env/bin/python - <<'PY'
 import hashlib, json, urllib.request
 from pathlib import Path

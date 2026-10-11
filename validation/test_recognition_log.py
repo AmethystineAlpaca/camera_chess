@@ -37,7 +37,8 @@ class CorrectionLogTests(unittest.TestCase):
         tree = ast.parse(Path(__file__).with_name('lite_live_server.py').read_text())
         definition = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == 'Handler')
         scope = dict(SimpleHTTPRequestHandler=SimpleHTTPRequestHandler, O=self.root, D=self.root,
-                     game=self.game, audit=self.audit, recognition_mode='original', time=time, json=json, traceback=traceback)
+                     game=self.game, audit=self.audit, saved_settings={}, recognition_mode='original', time=time, json=json, traceback=traceback,
+                     log_control=Mock(enabled=False, status=Mock(return_value=dict(enabled=False))))
         exec(compile(ast.Module(body=[definition], type_ignores=[]), '<server-handler>', 'exec'), scope)
         self.handler_class=scope['Handler']
         self.server = ThreadingHTTPServer(('127.0.0.1',0),self.handler_class)

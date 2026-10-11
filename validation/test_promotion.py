@@ -59,6 +59,31 @@ class PromotionTests(unittest.TestCase):
                         self.assertTrue(g.board.is_valid())
                         self.assertIsNone(g.promotion)
 
+    def test_manual_confirmation_survives_wrong_camera_and_keeps_corrections(self):
+        for representation in ('pawn','piece'):
+            g=self.game()
+            move=chess.Move.from_uci('a7a8q')
+            target=g.physical_after(move,representation=='pawn')
+            self.stable(g,g.physical_after(move,True))
+            identity=g.promotion['id']
+            g.raw_observed=chess.Board(None)
+            g.camera_phase='uncertain';g.last_supported=0
+            with patch('chess_game.threading.Thread'):
+                g.confirm_promotion(identity,'q',representation,manual=True)
+            self.assertEqual(g.board.piece_at(chess.A8),chess.Piece(chess.QUEEN,chess.WHITE))
+            self.assertEqual(g.proxies,{chess.A8} if representation=='pawn' else set())
+            self.assertEqual(g.observed.board_fen(),target.board_fen())
+            self.assertEqual(g.manual_corrections['e1']['piece'],'K')
+            self.assertTrue(g.history[-1]['manual_promotion_confirmation'])
+            with self.assertRaises(ValueError):g.confirm_promotion(identity,'q',representation,manual=True)
+
+    def test_manual_confirmation_still_checks_engine_choice_and_identity(self):
+        g=self.game(computer=True);g.pending=chess.Move.from_uci('a7a8n')
+        self.stable(g,g.physical())
+        with self.assertRaises(ValueError):g.confirm_promotion('old','n','pawn',manual=True)
+        with self.assertRaises(ValueError):g.confirm_promotion(g.promotion['id'],'q','pawn',manual=True)
+        self.assertFalse(g.history)
+
     def test_pawn_never_auto_queens_or_times_out(self):
         g = self.game()
         board = g.physical_after(chess.Move.from_uci('a7a8q'), True)

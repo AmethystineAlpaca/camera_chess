@@ -142,6 +142,7 @@ class OrientationTests(unittest.TestCase):
             for i in range(6):
                 r=self.record(None,i,'uncertain');r['raw']='7k/8/8/8/8/8/4P3/K7'
                 g.observe(r,i*.4,100+i*.4)
+            g.finish_endgame_scan(g.endgame_scan_deadline)
             self.assertEqual(g.state,'endgame_ready')
             self.assertFalse(g.snapshot(102)['needs_orientation'])
             self.assertTrue(g.side_confirmed)

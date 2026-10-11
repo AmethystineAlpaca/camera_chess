@@ -40,7 +40,7 @@ const run=s=>vm.runInContext(s,c);
      c.fixture={...scan,state,camera_phase};run('playing=true;show(fixture)');
      assert.equal(el('#board-notice').textContent,'Check the recognized pieces. Use Fix recognition for mistakes.');
      assert.equal(el('#board-notice').className,'action');
-     assert.equal(el('#confirm-position').disabled,state!=='endgame_ready'||camera_phase!=='stable');
+     assert.equal(el('#confirm-position').disabled,state!=='endgame_ready');
    }
  }
  // Other play/load screens must keep their action through confidence jitter too.

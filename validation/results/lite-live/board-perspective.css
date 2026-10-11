@@ -1,0 +1,25 @@
+/* Removable perspective experiment. The normal view keeps its original canvas. */
+#camera-views{display:flex;flex-direction:column;justify-content:center;gap:10px;width:100%;min-height:0;flex:1}
+#camera-views figure{margin:0;min-width:0;min-height:0;display:flex;flex-direction:column;align-items:center;gap:6px}
+#camera-views canvas{max-height:100%;width:100%;object-fit:contain;flex-shrink:1}
+#camera-views figcaption{align-self:flex-start;font-size:12px;letter-spacing:.02em;color:#bacdd7}
+#camera-views.dual-view{justify-content:safe center;flex-shrink:0}
+.dual-view #camera{max-height:20vh;aspect-ratio:16/9}
+.dual-view #rectified-camera{max-height:39vh;aspect-ratio:1/1}
+#perspective-status{font-size:12px;line-height:1.45;color:#b9cbd5;margin:0;flex-shrink:0}
+#perspective-status[data-state="tracking"]{color:#8ee4c5}
+#settings .perspective-choice{display:flex;align-items:flex-start;gap:10px;line-height:1.45}
+.perspective-choice input{margin-top:5px;accent-color:#7de1bd;flex-shrink:0}
+.perspective-choice small{display:block;margin-top:4px}
+.promotion-active .dual-view #camera{max-height:90px}
+.promotion-active .dual-view #rectified-camera{max-height:150px}
+@media(max-width:700px){
+ .layout:has(.dual-view){grid-template-rows:minmax(0,1fr) 175px}
+ #camera-views.dual-view{display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:8px;flex:1}
+ #camera-views.dual-view figure{height:125px}
+ .dual-view #camera,.dual-view #rectified-camera{height:100px;max-height:100px;width:100%;max-width:100%}
+ #perspective-status{font-size:11px;text-align:center}
+ #camera-panel:has(.dual-view){gap:5px;padding:6px;overflow:auto}
+ .layout.promotion-active:has(.dual-view){grid-template-rows:minmax(160px,1fr) minmax(0,1.2fr)}
+ .promotion-active #camera-views{display:none}
+}
