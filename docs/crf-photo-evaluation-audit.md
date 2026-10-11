@@ -76,4 +76,3 @@ All three intervals include zero. v1 leads by three photos with one predecessor;
 | `data/crf/runs/real-photos-synthetic-previous-v1/all-seed20261011-n10.json` | `d3d849f095916bf19ebff35d12434ef8520a983dc13392188be8faf5caa827c1` |
 
 Model hashes remain those recorded in E06/E10. Cached photo probabilities: `974dcbe44e2d3cf734592adc097b60133bbd50bd27e61317ca20011310b03fc2`; frozen image checkpoint: `fd269bcfdefe6208b75490d7ac72524c0970f8212470a88012ce755b5f092d10`. Both were checked against the input files. Bulk artifacts are local and Git-ignored.
-
