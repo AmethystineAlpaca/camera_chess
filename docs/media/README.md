@@ -5,7 +5,7 @@ Public demo exports for [Camera Chess](https://github.com/AmethystineAlpaca/came
 | Asset | Format | Use |
 | --- | --- | --- |
 | [Demo shot by phone](demo-v1-portrait.mp4) | 720 × 1280, about 29 seconds | Casual posts and vertical-video platforms |
-| [Demo shot by phone GIF](demo-v1-portrait.gif) | 360 × 640, about 29 seconds, 8 fps | README preview of the phone recording (Earlier UI) |
+| [Demo shot by phone GIF](demo-v1-portrait.gif) | 360 × 640, about 29 seconds, 8 fps | Standalone preview of the phone recording (Earlier UI); not embedded in the project READMEs |
 | [Screen recording](demo-v1.mp4) | 1470 × 718, about 55 seconds | Technical walkthroughs and project showcases |
 | [Preview](demo-v1.gif) | Animated GIF, about 18 seconds | README and communities that support images but not video |
 
@@ -48,8 +48,9 @@ python3 scripts/export-progress-demo.py '/path/to/录屏2026-10-11 下午3.48.49
 
 ## Earlier UI previews
 
-The earlier gameplay GIF and the demo shot by phone are labelled **Earlier UI**
-in the READMEs. The phone GIF preserves the full phone recording at original
+The earlier gameplay GIF is embedded with an **Earlier UI** label in the
+READMEs. The phone demo is linked as a video; its GIF is not embedded because
+the video preserves better image quality. The phone GIF retains the recording at original
 speed, scaled to 360 × 640 at 8 fps, without audio or source metadata.
 
 Reproduce the phone GIF from the repository root:

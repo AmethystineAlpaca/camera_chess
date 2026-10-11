@@ -92,10 +92,6 @@ Consecutive-frame checks and chess rules decide when to accept a position. The m
 
 [Watch the screen recording · 55 seconds](docs/media/demo-v1.mp4).
 
-### Demo shot by phone (Earlier UI)
-
-![Demo shot by phone showing the physical board and Mac with the earlier UI](docs/media/demo-v1-portrait.gif)
-
 [Watch the video shot by phone · 29 seconds](docs/media/demo-v1-portrait.mp4).
 
 ## Your data stays local

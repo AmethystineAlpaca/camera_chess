@@ -92,10 +92,6 @@ cd camera_chess
 
 [观看屏幕录像 · 55 秒](docs/media/demo-v1.mp4)。
 
-### 手机拍摄的演示（早期界面 / Earlier UI）
-
-![手机拍摄的实体棋盘与 Mac 对弈演示，使用早期界面](docs/media/demo-v1-portrait.gif)
-
 [观看手机拍摄的视频 · 29 秒](docs/media/demo-v1-portrait.mp4)。
 
 ## 数据留在本机
