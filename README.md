@@ -4,7 +4,9 @@
 
 **Apple Silicon macOS** · English | [简体中文](README.zh-CN.md) | [Русский](README.ru.md)
 
-Turn an ordinary chessboard into a local AI chess experience with just a camera and your Mac. Move real pieces, watch the digital board follow, and hear your opponent's next move. Camera Chess combines **ChessQ Lite V4**, **our own trained postprocessing models**, and **automatic perspective correction** for accurate, responsive board recognition. The chess AI is powered by **Stockfish**.
+Turn an ordinary chessboard into a local AI chess experience with just a camera and your Mac. Move real pieces, watch the digital board follow, and hear your opponent's next move. The chess AI is powered by **Stockfish**.
+
+**Powered by [ChessQ Lite V4](https://huggingface.co/joelseytre/chessq-lite), enhanced with [decision models I trained for Camera Chess](docs/crf-real-photo-synthetic-previous-evaluation.md#neural-postprocessor-comparison--2026-10-11).** ChessQ reads the pieces; my decision layer combines those readings with the previous position and chess rules. Together with **automatic perspective correction**, this pipeline delivered **significantly improved recognition accuracy and reliability in our latest hands-on session**.
 
 - **Fast, accurate recognition:** camera-based piece detection, custom-trained CRF / neural postprocessing and checks across consecutive frames keep the physical and digital boards in sync.
 - **A better view of your board:** automatic board tracking and perspective correction straighten angled camera images before recognition.
@@ -35,7 +37,7 @@ Choose your new piece, keep the pawn as a physical substitute or replace it, and
 
 Source: **00:21.8–00:37.0**, original speed. This demo uses **Queen / Keep pawn** with manual confirmation. Check the displayed position before confirming; **Fix recognition** lets you correct it when needed.
 
-All demo exports are silent; the app provides spoken moves. The GIFs end before the later wait in the full recording. [Clip and export details](docs/media/README.md#october-11-2026-progress-demo) · [Earlier gameplay demo](docs/media/demo-v1.mp4) · [Phone demo](docs/media/demo-v1-portrait.mp4).
+All demo exports are silent; the app provides spoken moves. The GIFs end before the later wait in the full recording. [Clip and export details](docs/media/README.md#october-11-2026-progress-demo) · [Earlier gameplay demo](docs/media/demo-v1.mp4) · [Demo shot by phone](docs/media/demo-v1-portrait.mp4).
 
 ## Get started
 

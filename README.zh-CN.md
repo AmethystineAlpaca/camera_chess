@@ -4,7 +4,9 @@
 
 **Apple Silicon macOS** · [English](README.md) | 简体中文 | [Русский](README.ru.md)
 
-一副普通国际象棋棋盘、一个摄像头和一台 Mac，就能开启本地 AI 对弈。移动真实棋子，数字棋盘自动跟随，再听 AI 播报下一步。Camera Chess 将 **ChessQ Lite V4**、**本项目自行训练的后处理模型**与**自动棋盘透视校正**结合，实现准确、快速的棋盘识别。对弈 AI 由 **Stockfish** 提供。
+一副普通国际象棋棋盘、一个摄像头和一台 Mac，就能开启本地 AI 对弈。移动真实棋子，数字棋盘自动跟随，再听 AI 播报下一步。对弈 AI 由 **Stockfish** 提供。
+
+**以 [ChessQ Lite V4](https://huggingface.co/joelseytre/chessq-lite) 为视觉基础，结合[我为 Camera Chess 自行训练的决策模型](docs/crf-real-photo-synthetic-previous-evaluation.md#neural-postprocessor-comparison--2026-10-11)。** ChessQ 负责识别棋子，决策层结合识别结果、上一局面和棋规，再配合**自动透视校正**，在最新实机对弈中带来了**明显更高的识别准确率与可靠性**。
 
 - **识别快、准确率高：** 摄像头识别棋子，自行训练的 CRF / 神经网络后处理结合连续帧检查，让实体棋盘与数字棋盘保持同步。
 - **斜着拍，也能校正棋盘：** 自动定位、跟踪棋盘，校正画面透视后再送入识别模型。
@@ -35,7 +37,7 @@
 
 原视频：**00:21.8–00:37.0**，原速。本段演示使用 **Queen / Keep pawn** 并人工确认。确认前请核对显示的棋面，有误时可用 **Fix recognition** 修正。
 
-演示导出文件无声，应用本身支持语音播报。GIF 在完整录屏后段的等待前结束。[片段与导出说明](docs/media/README.md#october-11-2026-progress-demo) · [早期对弈演示](docs/media/demo-v1.mp4) · [手机竖屏演示](docs/media/demo-v1-portrait.mp4)。
+演示导出文件无声，应用本身支持语音播报。GIF 在完整录屏后段的等待前结束。[片段与导出说明](docs/media/README.md#october-11-2026-progress-demo) · [早期对弈演示](docs/media/demo-v1.mp4) · [手机拍摄的演示](docs/media/demo-v1-portrait.mp4)。
 
 ## 快速开始
 
