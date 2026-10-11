@@ -6,7 +6,10 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-import crf_postprocessor as v1
+try:
+    from . import crf_postprocessor as v1
+except ImportError:
+    import crf_postprocessor as v1
 
 KINDS = ("feature_mlp", "square_mlp", "move_mlp1", "move_mlp2", "cnn", "attention")
 

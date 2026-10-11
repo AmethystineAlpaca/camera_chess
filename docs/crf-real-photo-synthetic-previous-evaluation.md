@@ -93,7 +93,7 @@ For one predecessor, v1 alone is correct on 7 photos and v2 alone on 4. With fiv
 
 The current images are real, but the predecessor is constructed conditional on the known correct current placement. This privileged input guarantees a legal one-move path to the target. It does not measure recognition of a real previous photo, recovery from an incorrect reference, predicted-state feedback, unchanged/illegal target events, live commit decisions, or latency. The images are rectified still photographs rather than the application's raw continuous camera stream. This is a conditional scoring and predecessor-sensitivity evaluation, not a deployment-accuracy measurement.
 
-The JSON records contain each sampled FEN and forward legal move, candidate count/index, each method's exact-match flag and square accuracy, split summaries, intervals, and model/input hashes. Full predicted board arrays are not stored. The current script and both results were fully reproduced during the log audit; artifact checksums are recorded in E12. The five-state conditions exactly match the first five available conditions in the ten-state run.
+The JSON records contain each sampled FEN and forward legal move, candidate count/index, each method's exact-match flag and square accuracy, split summaries, intervals, and model/input hashes. Full predicted board arrays are not stored. The current script and both results were fully reproduced during the log audit; artifact checksums are recorded in the [protocol/audit record](crf-photo-evaluation-audit.md). The five-state conditions exactly match the first five available conditions in the ten-state run.
 
 Reports remain in the Git-ignored directory `data/crf/runs/real-photos-synthetic-previous-v1/` as `all-seed20261011-n5.json`, `all-seed20261011-n10.json`, and `chessq-lite-raw-test-audit.json`. Reproduce the raw test-split audit with:
 
@@ -229,16 +229,33 @@ Wrong high-confidence conditions count wrong top-ranked boards with candidate-re
 | Spatial CNN | 486 | 277 | 3.5323 | 0.200 ms | 0.224 ms |
 | Spatial Attention | 448 | 255 | 3.3412 | 0.251 ms | 0.281 ms |
 
+### Single-board latency comparison
+
+Apple M4, CPU with four threads; one cached photo, 933 candidates, 30 repetitions after five scoring warmups per model. These are medians from the quick timing check requested after the accuracy evaluation.
+
+| Postprocessor | Scoring only | Candidates + scoring + argmax |
+| --- | ---: | ---: |
+| v1 CRF | 0.200 ms | 7.815 ms |
+| v2 CRF | 0.343 ms | 9.589 ms |
+| Feature MLP | 1.615 ms | 10.283 ms |
+| Shared square MLP | 0.417 ms | 7.983 ms |
+| Changed-square MLP (1 hidden layer) | 0.875 ms | 8.364 ms |
+| Changed-square MLP (2 hidden layers) | 0.973 ms | 8.531 ms |
+| Spatial CNN | 0.456 ms | 7.777 ms |
+| Spatial Attention | 0.599 ms | 8.048 ms |
+
+Total postprocessing was approximately **8–10 ms** for this board. This excludes ChessQ image inference, camera capture, acceptance gates and temporal waiting. A separate benchmark was running concurrently, so small differences should not be treated as a reliable speed ranking. The earlier scoring table uses different inputs and run conditions. [Recorded timing summary and scope](evaluations/postprocessor-latency-20261011.json).
+
 ### Interpretation and artifacts
 
-These results compare conditional scoring on real still-photo probabilities with synthetic predecessors constructed from the correct current label. Candidate coverage is guaranteed by that construction, not measured in deployment. They do not establish live commit accuracy, recovery from an incorrect previous board, or temporal behavior. All six models are retained regardless of photo performance; none is integrated into the application. Synthetic test shards remain unread. This comparison did not write to the experiment logs.
+These results compare conditional scoring on real still-photo probabilities with synthetic predecessors constructed from the correct current label. Candidate coverage is guaranteed by that construction, not measured in deployment. They do not establish live commit accuracy, recovery from an incorrect previous board, or temporal behavior. All six models are retained regardless of photo performance. They are now selectable alongside v1/v2 in Settings → Recognition Model, behind the unchanged ChessQ Lite V4 image recognizer. The default two-layer changed-square MLP has the highest one-predecessor photo point estimate; this is not evidence of a live-video advantage. Synthetic test shards remain unread.
 
 Published artifacts: [six trained checkpoints and their manifest](../research/models/neural-postprocessors-v1/manifest.json), and [machine-readable evaluation results, training curves, and audits](evaluations/neural-postprocessors-20261011.json). The checkpoint bytes match the selected models used for the tables above. Full image data and per-condition bulk records remain local.
 
 Run directory (Git-ignored): `data/crf/runs/neural-postprocessors-run1`. Each model has `model.pt`, `history.json`, and `report.json`; the run has source snapshots, configuration, hashes, baseline validation reproduction, and training summary. `photo-evaluation.json` retains all predecessor conditions and each new model's predicted 64-square board, move, operation, posterior, target NLL, correctness, and score timing. It also records dataset, baseline, and checkpoint hashes. Full checkpoint loading was verified before evaluation.
 
 
-**Completion audit:** All six saved checkpoints were reloaded and verified against their recorded hashes, selected epochs, parameter counts, frozen v1 coefficients, and 160,000/20,000 sample counts. All 72 training epochs completed. The original trainer's final file guard stopped only because a concurrent task appended E13 (live-data collection planning) to `crf-experiment-log.md`; that addition was preserved and was not part of this model comparison. The baseline models and training-cache hashes were unchanged. The audit is saved in `training-complete.json`. The maintained trainer now records concurrent documentation changes separately from model-integrity failures; the run retains the exact original source snapshots. Four new numerical/metric tests and the 16 existing CRF/data tests passed.
+**Completion audit:** All six checkpoints were reloaded and their hashes, selected epochs, parameter counts and frozen baseline verified. All 72 training epochs completed and 20 CRF/data/neural tests passed. See the [machine-readable audit records](evaluations/neural-postprocessors-20261011.json) for details.
 
 Reproduction (use a new training directory; existing outputs are rejected):
 

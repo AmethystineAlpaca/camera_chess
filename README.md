@@ -4,7 +4,7 @@
 
 **A physical chessboard. A camera. A computer opponent that speaks its moves.**
 
-Camera Chess is a camera-based chess app that lets you play **Stockfish on a physical chessboard**. **ChessQ Lite V4** recognizes the pieces locally on your Apple Silicon Mac, and a **lightweight CRF trained for this project** combines its probabilities with the previous position. The digital board follows your moves, and the computer speaks its reply. Use an ordinary board and a camera—no electronic chessboard or piece sensors required.
+Camera Chess is a camera-based chess app that lets you play **Stockfish on a physical chessboard**. **ChessQ Lite V4** recognizes the pieces locally on your Apple Silicon Mac, and a **selectable postprocessor trained for this project** combines its probabilities with the previous position. The digital board follows your moves, and the computer speaks its reply. Use an ordinary board and a camera—no electronic chessboard or piece sensors required.
 
 ![Camera Chess: camera-based physical chessboard recognition and Stockfish play on macOS](docs/media/demo-v1.gif)
 
@@ -14,7 +14,7 @@ The demo videos are silent; the app itself provides spoken moves.
 
 ## Why it feels good
 
-- **Real-board play:** ChessQ Lite V4 reads the camera image; the CRF, temporal checks and chess rules help resolve uncertain piece labels using the previous position.
+- **Real-board play:** ChessQ Lite V4 reads the camera image; the selected postprocessor, temporal checks and chess rules help resolve uncertain piece labels using the previous position.
 - **A capable opponent:** Stockfish supplies legal moves with four difficulty levels, clear board arrows, and English voice guidance. Sound starts enabled.
 - **Fast feedback:** live camera, board updates, move confirmation and recovery cues keep the physical and digital boards connected.
 - **Simple controls:** click the floating ♞ to open the game, use **Back to Home** to leave a session, and **Quit Application** to stop every background component.
@@ -23,6 +23,8 @@ The demo videos are silent; the app itself provides spoken moves.
 - **Local processing:** camera recognition and engine play run on your Mac; no cloud inference account is required.
 
 ## Recent updates
+
+- Added eight selectable postprocessors behind ChessQ Lite V4. On the 176-photo evaluation with one constructed predecessor per image, the two-layer MLP reached **72.73% exact boards**, compared with **71.02% for v1 CRF**. The gain is modest and not statistically established; video accuracy has not yet been quantified. [Accuracy and timing details](docs/crf-real-photo-synthetic-previous-evaluation.md#neural-postprocessor-comparison--2026-10-11).
 
 - Added the project-trained CRF postprocessor and automatic position acceptance, with correction and rollback through **Fix recognition**. Initial physical-board feedback is encouraging; broader accuracy testing is still needed.
 - Added pawn promotion choices, including using a pawn as a substitute when no spare piece is available. **Implemented, but not yet fully tested by people on a physical board.**
@@ -36,7 +38,7 @@ Recognition accuracy still needs improvement, especially across different boards
 ```mermaid
 flowchart TD
     C["Camera frame"] --> V["ChessQ Lite V4 · frozen weights<br/>64 × 13 piece probabilities"]
-    V --> R["Project-trained CRF"]
+    V --> R["Selectable CRF / MLP / CNN / Attention"]
     G["Accepted board + turn"] --> R
     R --> T["Temporal stability + chess rules"]
     T --> G
@@ -45,9 +47,9 @@ flowchart TD
     F --> G
 ```
 
-The CRF is trained separately; the image recognizer's weights stay unchanged. It scores candidate positions using the previous board and current piece probabilities. Stable readings continue automatically through the turn rules. During the computer's turn, only its instructed move can be accepted; while it is thinking, another move cannot be committed. Corrections reconcile the edited board with current and recent positions and discard engine replies based on a mistaken move.
+The postprocessor is trained separately; the image recognizer's weights stay unchanged. It scores candidate positions using the previous board and current piece probabilities. Stable readings continue automatically through the turn rules. During the computer's turn, only its instructed move can be accepted; while it is thinking, another move cannot be committed. Corrections reconcile the edited board with current and recent positions and discard engine replies based on a mistaken move.
 
-The CRF and UI are still being tuned. Synthetic validation and offline still-photo evaluation with constructed previous states do not establish continuous camera-stream accuracy. See the [experiment log](docs/crf-experiment-log.md) and [real-photo evaluation report](docs/crf-real-photo-synthetic-previous-evaluation.md) for results and scope, and the [dataset build record](docs/crf-data.md) for sources and reproducible preparation. Downloaded datasets, camera frames, saved games, correction archives and run logs stay local and are excluded from Git; the repository includes code, documentation and the small trained CRF checkpoint.
+The postprocessors and UI are still being tuned. Synthetic validation and offline still-photo evaluation with constructed previous states do not establish continuous camera-stream accuracy. See the [experiment log](docs/crf-experiment-log.md) and [real-photo evaluation report](docs/crf-real-photo-synthetic-previous-evaluation.md) for results and scope, and the [dataset build record](docs/crf-data.md) for sources and reproducible preparation. Downloaded datasets, camera frames, saved games, correction archives and run logs stay local and are excluded from Git; the repository includes code, documentation and the small trained postprocessor checkpoints.
 
 ## V1 performance
 
@@ -60,7 +62,7 @@ Measured on the development Apple Silicon Mac, across **426 recorded frames**, b
 
 These are warm-running frame timings, not camera startup or complete move-to-speech latency. Stable-position confirmation adds deliberate settling time. Both retained reference-board images matched their expected positions exactly (**2/2**); this small smoke check is not a general accuracy benchmark. The demo shows working physical-board play, while lighting, camera angle and occlusion still affect recognition.
 
-**Current application checks:** 166 Python tests and 7 browser-UI test scripts pass. These checks do not establish real-world recognition accuracy or replace human testing of promotion.
+**Current application checks:** 170 Python tests and 7 browser-UI test scripts pass. These checks do not establish real-world recognition accuracy or replace human testing of promotion.
 
 ## Try it
 
@@ -75,7 +77,7 @@ cd camera_chess
 ./start.sh
 ```
 
-Click the floating chess piece, select **Start a New Game**, allow camera access, and keep all 64 squares visible. The computer plays the color nearest the camera. Move its pieces when instructed, then clear your hands for confirmation. Settings controls difficulty and speaking voice.
+Click the floating chess piece, select **Start a New Game**, allow camera access, and keep all 64 squares visible. The computer plays the color nearest the camera. Move its pieces when instructed, then clear your hands for confirmation. Settings controls difficulty, speaking voice and **Recognition Model**: ChessQ Lite V4 plus the selected postprocessor. The eight choices switch only the postprocessing layer, apply immediately and persist locally.
 
 **Resume** keeps an in-memory game while the service runs; named **Save / Load** positions survive restarts and retain the saved player colors without checking board direction again. **Endgame** first asks which color you play, then scans the position and lets you confirm who moves next. Closing the last browser page stops the camera; quitting through the home screen or floating × closes the camera, recognition worker, engine and service.
 
@@ -101,7 +103,7 @@ If the displayed position is wrong, open **Fix recognition**, choose the actual 
 
 **Does it need cloud AI or a subscription?** No cloud inference account is required. Setup downloads the dependencies and model; board recognition and engine play then run locally.
 
-**Which recognition model does it use?** [ChessQ Lite](https://huggingface.co/joelseytre/chessq-lite), the ViT-S/14 V4 FP16 checkpoint (`cq-vit-s-644-v4-seed2-safetensors-fp16-r2`), followed by this project's separately trained CRF. ChessQ supplies image probabilities, the CRF uses the previous position to interpret them, and Stockfish chooses the moves.
+**Which recognition model does it use?** [ChessQ Lite](https://huggingface.co/joelseytre/chessq-lite), the ViT-S/14 V4 FP16 checkpoint (`cq-vit-s-644-v4-seed2-safetensors-fp16-r2`), followed by a selectable CRF, MLP, CNN or Attention postprocessor. The default is the two-layer changed-square MLP. ChessQ supplies image probabilities, the postprocessor uses the previous position to interpret them, and Stockfish chooses the moves.
 
 **Does it support Windows, Linux, or online chess?** V1 targets Apple Silicon macOS and local play against Stockfish. It does not currently provide online game integration or a signed installer.
 
