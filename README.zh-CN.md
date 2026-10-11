@@ -84,6 +84,20 @@ cd camera_chess
 
 [技术实验记录](docs/crf-experiment-log.md) · [升变实现](docs/promotion-physical-tracking.md)。不同棋盘、非后升变和实体棋子替换的扩展实测仍在继续。
 
+## 早期演示
+
+### 早期对弈演示（早期界面 / Earlier UI）
+
+![早期界面下从标准开局进行实体棋盘对弈](docs/media/demo-v1.gif)
+
+[观看屏幕录像 · 55 秒](docs/media/demo-v1.mp4)。
+
+### 手机拍摄的演示（早期界面 / Earlier UI）
+
+![手机拍摄的实体棋盘与 Mac 对弈演示，使用早期界面](docs/media/demo-v1-portrait.gif)
+
+[观看手机拍摄的视频 · 29 秒](docs/media/demo-v1-portrait.mp4)。
+
 ## 数据留在本机
 
 相机画面、存档、纠错记录和改进日志保存在本机，不纳入 Git。设置中的 **Log Data for potential improvements** 默认开启，可关闭以停止新增归档；**Open Log Folder** 打开已有档案。关闭记录不会删除旧文件，也不会自动上传数据。[存储与隐私控制](docs/local-improvement-data.md)。

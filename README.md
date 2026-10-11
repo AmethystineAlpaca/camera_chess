@@ -84,6 +84,20 @@ Consecutive-frame checks and chess rules decide when to accept a position. The m
 
 [Technical experiment log](docs/crf-experiment-log.md) · [Promotion details](docs/promotion-physical-tracking.md). Broader testing across boards, underpromotion and physical piece replacement is ongoing.
 
+## Earlier demos
+
+### Earlier gameplay demo (Earlier UI)
+
+![Earlier gameplay demo showing a standard opening with the earlier UI](docs/media/demo-v1.gif)
+
+[Watch the screen recording · 55 seconds](docs/media/demo-v1.mp4).
+
+### Demo shot by phone (Earlier UI)
+
+![Demo shot by phone showing the physical board and Mac with the earlier UI](docs/media/demo-v1-portrait.gif)
+
+[Watch the video shot by phone · 29 seconds](docs/media/demo-v1-portrait.mp4).
+
 ## Your data stays local
 
 Camera frames, saved games, corrections and improvement logs remain on your machine and are excluded from Git. **Log Data for potential improvements** is enabled by default in Settings; switch it off to stop new archival writes. **Open Log Folder** opens the existing archive. Disabling recording keeps earlier files, and nothing is uploaded automatically. [Storage and privacy controls](docs/local-improvement-data.md).

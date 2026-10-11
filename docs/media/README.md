@@ -5,6 +5,7 @@ Public demo exports for [Camera Chess](https://github.com/AmethystineAlpaca/came
 | Asset | Format | Use |
 | --- | --- | --- |
 | [Demo shot by phone](demo-v1-portrait.mp4) | 720 × 1280, about 29 seconds | Casual posts and vertical-video platforms |
+| [Demo shot by phone GIF](demo-v1-portrait.gif) | 360 × 640, about 29 seconds, 8 fps | README preview of the phone recording (Earlier UI) |
 | [Screen recording](demo-v1.mp4) | 1470 × 718, about 55 seconds | Technical walkthroughs and project showcases |
 | [Preview](demo-v1.gif) | Animated GIF, about 18 seconds | README and communities that support images but not video |
 
@@ -43,4 +44,18 @@ Reproduce with FFmpeg installed, from the repository root:
 
 ```bash
 python3 scripts/export-progress-demo.py '/path/to/录屏2026-10-11 下午3.48.49.mov'
+```
+
+## Earlier UI previews
+
+The earlier gameplay GIF and the demo shot by phone are labelled **Earlier UI**
+in the READMEs. The phone GIF preserves the full phone recording at original
+speed, scaled to 360 × 640 at 8 fps, without audio or source metadata.
+
+Reproduce the phone GIF from the repository root:
+
+```bash
+ffmpeg -i docs/media/demo-v1-portrait.mp4 \
+  -filter_complex '[0:v]fps=8,scale=360:-1:flags=lanczos,split[a][b];[a]palettegen=stats_mode=diff:max_colors=64[p];[b][p]paletteuse=dither=none:diff_mode=rectangle[g]' \
+  -map '[g]' -an -map_metadata -1 -loop 0 docs/media/demo-v1-portrait.gif
 ```
