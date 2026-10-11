@@ -3,12 +3,12 @@ const vm=require('node:vm'),fs=require('node:fs'),assert=require('node:assert/st
 const elements=new Map();
 const el=id=>{
   if(!elements.has(id))elements.set(id,{dataset:{},value:'',textContent:'',hidden:false,open:false,innerHTML:'',attributes:{},
-    replaceChildren(){},prepend(){},appendChild(){},add(){},addEventListener(){},getContext(){return {clearRect(){}}},querySelectorAll(){return []},querySelector(){return el('svg')},
+    replaceChildren(...children){this.children=children},prepend(){},appendChild(){},add(){},addEventListener(){},getContext(){return {clearRect(){}}},querySelectorAll(){return []},querySelector(){return el('svg')},
     setAttribute(k,v){this.attributes[k]=v},showModal(){this.open=true},close(){this.open=false}});
   return elements.get(id);
 };
 const context={document:{querySelector:el,createElement:()=>el(Symbol()),addEventListener(){}},window:{addEventListener(){}},
-  localStorage:{getItem(){},setItem(){},removeItem(){}},Date,Math,Option:function(){},AbortController,
+  localStorage:{getItem(){},setItem(){},removeItem(){}},Date,Math,Option:function(label,value){this.textContent=label;this.value=value},AbortController,
   setInterval(){},clearInterval(){},setTimeout(){},clearTimeout(){},fetch:()=>new Promise(()=>{}),Image:function(){}};
 vm.createContext(context);
 const html=fs.readFileSync(__dirname+'/results/lite-live/index.html','utf8');
@@ -20,6 +20,29 @@ const base={recognition_frame:[17,1234.5],session:'crf-test',position_token:'sam
   recognition_postprocess:{status:'stable',operation:'legal_move'}};
 const show=g=>{context.fixture=g;run('playing=true;show(fixture)')};
 (async()=>{
+  const choices=['small','large','feature_mlp','square_mlp','move_mlp1','move_mlp2','cnn','attention'].map(id=>({id,label:id+' (71.02% accuracy on evaluation set)'}));
+  context.fetch=async()=>({ok:true,json:async()=>({recognition_model:'small',recognition_models:choices})});
+  await run('openSettings()');
+  assert.equal(el('#recognition-model').value,'small');
+  assert.deepEqual(Array.from(el('#recognition-model').children,c=>c.value),choices.map(c=>c.id));
+  assert.ok(el('#recognition-model').children.every(c=>c.textContent.includes('accuracy on evaluation set')));
+  let modelRequest;
+  context.fetch=async(path,options)=>{
+    modelRequest={path,data:JSON.parse(options.body)};
+    return {ok:true,json:async()=>({recognition_model:'attention'})};
+  };
+  el('#recognition-model').value='attention';
+  await el('#recognition-model').onchange();
+  assert.equal(modelRequest.path,'/api/settings');
+  assert.equal(modelRequest.data.recognition_model,'attention');
+  assert.equal(el('#recognition-model').disabled,false);
+  context.fetch=async()=>({ok:false,json:async()=>({error:'Model unavailable'})});
+  el('#recognition-model').value='small';
+  await el('#recognition-model').onchange();
+  assert.equal(el('#recognition-model').value,'attention');
+  assert.equal(el('#model-feedback').textContent,'Model unavailable');
+  run('displayRecognitionModel(null)');
+  assert.equal(el('#recognition-model').disabled,true);
   for(const obsolete of ['id="confirm-recognition"','id="recognition-review"','/api/confirm-recognition','Confirm physical mistake'])assert.ok(!html.includes(obsolete));
   show(base);
   assert.equal(el('#board').innerHTML,'accepted-board');

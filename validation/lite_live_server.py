@@ -14,7 +14,7 @@ from camera_session import CameraSession
 from app_lifecycle import LauncherLease, BrowserPresence
 from saved_games import SavedGames
 from recognition_log import RecognitionLog, read_observation
-from crf_observation import CRFObservation
+from crf_observation import CRFObservation, MODELS, DEFAULT_MODEL, model_choices
 
 R = Path(__file__).resolve().parents[1]
 D = R/'validation/frames/lite-live'
@@ -34,8 +34,15 @@ for path in candidates:
         break
     except Exception as exc:
         print('Engine launch failed:', exc, flush=True)
+settings_path = R/'validation/recognition-settings.json'
+try:
+    selected_model = json.loads(settings_path.read_text()).get('recognition_model', DEFAULT_MODEL)
+except (OSError, ValueError, AttributeError):
+    selected_model = DEFAULT_MODEL
+if selected_model not in MODELS:
+    selected_model = DEFAULT_MODEL
 game = Game(engine, R/'validation/game-state.json',
-            postprocessor=CRFObservation() if os.environ.get('CHESS_CRF', '1') != '0' else None)
+            postprocessor=CRFObservation(model=selected_model) if os.environ.get('CHESS_CRF', '1') != '0' else None)
 game.reset(computer='auto')
 library = SavedGames(R/'validation/saved-games', R/'validation/game-state.json')
 launcher_lease = LauncherLease()
@@ -120,7 +127,10 @@ class Handler(SimpleHTTPRequestHandler):
         except (BrokenPipeError, ConnectionResetError):
             audit.event('response_lost',path=self.path,status=status,correction_id=value.get('correction_id'))
     def do_GET(self):
-        if self.path.split('?')[0] == '/api/game':
+        if self.path.split('?')[0] == '/api/settings':
+            with game.lock:
+                self.respond(dict(recognition_model=getattr(game.postprocessor, 'model', None), recognition_models=model_choices()))
+        elif self.path.split('?')[0] == '/api/game':
             with game.lock:
                 snapshot = audit.remember_view(game.snapshot(time.time()))
                 self.respond(snapshot)
@@ -161,7 +171,7 @@ class Handler(SimpleHTTPRequestHandler):
             return
         actions = {'/api/pause':game.pause,'/api/resume':game.resume,'/api/undo':game.undo_round,
                    '/api/claim-draw':game.claim_draw,'/api/clear-corrections':game.clear_corrections}
-        if self.path not in (*actions,'/stop','/api/new-game','/api/start-game','/api/exit-game','/api/load-saved','/api/correction-context','/api/end-correction','/api/diagnostics','/api/correct-square','/api/correct-squares','/api/save-game','/api/delete-game','/api/load-game','/api/resume-game','/api/start-endgame','/api/confirm-endgame','/api/confirm-promotion','/api/quit-app','/api/launcher-heartbeat','/api/page-heartbeat','/api/page-leave','/api/browser-entry'):
+        if self.path not in (*actions,'/api/settings','/stop','/api/new-game','/api/start-game','/api/exit-game','/api/load-saved','/api/correction-context','/api/end-correction','/api/diagnostics','/api/correct-square','/api/correct-squares','/api/save-game','/api/delete-game','/api/load-game','/api/resume-game','/api/start-endgame','/api/confirm-endgame','/api/confirm-promotion','/api/quit-app','/api/launcher-heartbeat','/api/page-heartbeat','/api/page-leave','/api/browser-entry'):
             self.send_error(404)
             return
         try:
@@ -195,7 +205,20 @@ class Handler(SimpleHTTPRequestHandler):
                 return
             with game.lock:
                 self.validate_current(data)
-                if self.path == '/api/quit-app':
+                if self.path == '/api/settings':
+                    if game.postprocessor is None:
+                        raise ValueError('Recognition assist is disabled by CHESS_CRF.')
+                    replacement = CRFObservation(model=data.get('recognition_model'))
+                    if replacement.error:
+                        raise ValueError('Could not load the selected recognition model.')
+                    temporary = settings_path.with_suffix('.tmp')
+                    temporary.write_text(json.dumps(dict(recognition_model=replacement.model)))
+                    os.replace(temporary, settings_path)
+                    game.postprocessor = replacement
+                    game.invalidate_crf()
+                    game.crf_last_decision = None
+                    self.respond(dict(recognition_model=replacement.model))
+                elif self.path == '/api/quit-app':
                     if data.get('save'):
                         library.save(game,data.get('name'))
                     quit_requested.set()

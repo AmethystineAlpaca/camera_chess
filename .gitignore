@@ -38,3 +38,5 @@ data/crf/
 *.p12
 *.pfx
 credentials*.json
+
+validation/recognition-settings.json

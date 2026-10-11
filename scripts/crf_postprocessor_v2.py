@@ -1,4 +1,4 @@
-"""Experimental 250-weight single-frame CRF; never loaded by the live adapter.
+"""Experimental 250-weight single-frame CRF, selectable in the live adapter.
 
 Same candidates as v1. Zero residual weights reproduce fixed log-probability
 scoring. Features use only the current probabilities and candidate operation;
@@ -11,7 +11,10 @@ from pathlib import Path
 
 import numpy as np
 
-from crf_postprocessor import CLASSES, EPSILON, GROUPS, candidates, validate_probabilities
+try:
+    from .crf_postprocessor import CLASSES, EPSILON, GROUPS, candidates, validate_probabilities
+except ImportError:
+    from crf_postprocessor import CLASSES, EPSILON, GROUPS, candidates, validate_probabilities
 
 SCHEMA = 2
 MODEL_ID = "crf-v2-250"

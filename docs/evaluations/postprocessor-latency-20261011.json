@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-11",
+  "hardware": "Apple M4",
+  "device": "CPU",
+  "threads": 4,
+  "photos": 1,
+  "candidates": 933,
+  "repeats": 30,
+  "scoring_warmups": 5,
+  "source": "Recorded terminal timing summary; individual quick-run samples were not saved.",
+  "scope": "Cached photo probabilities; full timer includes candidate generation, scoring and argmax. Excludes image inference, camera, acceptance gates and temporal waiting. A separate benchmark was running concurrently; indicative comparison, not an isolated benchmark.",
+  "models": [
+    {
+      "model": "v1 CRF",
+      "scoring_median_ms": 0.2,
+      "candidates_scoring_argmax_median_ms": 7.815
+    },
+    {
+      "model": "v2 CRF",
+      "scoring_median_ms": 0.343,
+      "candidates_scoring_argmax_median_ms": 9.589
+    },
+    {
+      "model": "Feature MLP",
+      "scoring_median_ms": 1.615,
+      "candidates_scoring_argmax_median_ms": 10.283
+    },
+    {
+      "model": "Shared square MLP",
+      "scoring_median_ms": 0.417,
+      "candidates_scoring_argmax_median_ms": 7.983
+    },
+    {
+      "model": "Changed-square MLP (1 hidden layer)",
+      "scoring_median_ms": 0.875,
+      "candidates_scoring_argmax_median_ms": 8.364
+    },
+    {
+      "model": "Changed-square MLP (2 hidden layers)",
+      "scoring_median_ms": 0.973,
+      "candidates_scoring_argmax_median_ms": 8.531
+    },
+    {
+      "model": "Spatial CNN",
+      "scoring_median_ms": 0.456,
+      "candidates_scoring_argmax_median_ms": 7.777
+    },
+    {
+      "model": "Spatial Attention",
+      "scoring_median_ms": 0.599,
+      "candidates_scoring_argmax_median_ms": 8.048
+    }
+  ]
+}

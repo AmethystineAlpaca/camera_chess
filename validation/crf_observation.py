@@ -9,15 +9,50 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from scripts.crf_postprocessor import CLASSES, SQUARES, GROUPS, candidates, load_weights, score, validate_probabilities
+from scripts import crf_postprocessor_v2
 from lite_consensus import Consensus
+
+# Exact-board accuracy, one synthetic predecessor per photo, 176-photo run.
+# Source: docs/evaluations/neural-postprocessors-20261011.json and its report.
+MODELS = {
+    'small': ('Small CRF · 25 parameters', 125),
+    'large': ('Large CRF · 250 parameters', 122),
+    'feature_mlp': ('Feature MLP · 1 hidden layer', 123),
+    'square_mlp': ('Shared square MLP', 126),
+    'move_mlp1': ('Changed-square MLP · 1 hidden layer', 127),
+    'move_mlp2': ('Changed-square MLP · 2 hidden layers', 128),
+    'cnn': ('Spatial CNN', 122),
+    'attention': ('Spatial Attention', 126),
+}
+DEFAULT_MODEL = max(MODELS, key=lambda model: MODELS[model][1])
+
+
+def model_choices():
+    return [dict(id=key, label=f'{name} ({correct / 176:.2%} accuracy on evaluation set)')
+            for key, (name, correct) in MODELS.items()]
 
 
 class CRFObservation:
-    def __init__(self, model_path=None):
+    def __init__(self, model_path=None, model='small'):
+        if model not in MODELS:
+            raise ValueError('Invalid recognition model.')
+        self.model = model
+        loader = load_weights if model == 'small' else crf_postprocessor_v2.load_weights
+        self.score = score if model == 'small' else crf_postprocessor_v2.score
         self.error = None
+        self.neural = None
         try:
-            self.weights = load_weights(model_path or ROOT / 'research/models/crf-postprocessor-v1.json')
-        except (OSError, ValueError, KeyError, TypeError) as exc:
+            if model in ('small', 'large'):
+                filename = 'crf-postprocessor-v1.json' if model == 'small' else 'crf-postprocessor-v2-250.json'
+                self.weights = loader(model_path or ROOT / 'research/models' / filename)
+            else:
+                from scripts.neural_postprocessor import load_model, score_one
+                self.neural, checkpoint = load_model(model_path or ROOT / 'research/models/neural-postprocessors-v1' / f'{model}.pt')
+                if checkpoint['kind'] != model:
+                    raise ValueError('Recognition checkpoint does not match the selected model.')
+                self.neural_score = score_one
+                self.weights = None
+        except (OSError, ValueError, KeyError, TypeError, RuntimeError, ImportError) as exc:
             self.weights = None
             self.error = str(exc)
         self.reset()
@@ -52,7 +87,9 @@ class CRFObservation:
         if not allowed.any():
             self.reset()
             return dict(status='uncertain', detail='The edited position does not match a supported move. Check the corrected squares.')
-        scores = np.where(allowed, score(q, options, self.weights), -np.inf)
+        raw_scores = (self.neural_score(self.neural, q, options.boards[0], options)
+                      if self.neural is not None else self.score(q, options, self.weights))
+        scores = np.where(allowed, raw_scores, -np.inf)
         order = np.argsort(-scores, kind='stable')
         winner = int(order[0])
         mass = np.exp(scores - scores[winner]); posterior = float(mass[winner] / mass.sum())
